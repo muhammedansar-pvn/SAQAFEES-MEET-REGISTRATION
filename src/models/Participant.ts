@@ -102,9 +102,6 @@ const ParticipantSchema = new Schema<IParticipant>(
   }
 );
 
-if (mongoose.models.Participant) {
-  mongoose.deleteModel("Participant");
-}
-
+// Prevent model overwrite in development HMR
 export const Participant: Model<IParticipant> =
-  mongoose.model<IParticipant>("Participant", ParticipantSchema);
+  mongoose.models.Participant || mongoose.model<IParticipant>("Participant", ParticipantSchema);

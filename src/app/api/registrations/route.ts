@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    // Handle MongoDB duplicate key error code 11000
+    // 1. Handle MongoDB duplicate key error code 11000
     if (error?.code === 11000) {
       return NextResponse.json(
         {
@@ -133,7 +133,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.error("[Registration API Error]", error);
+    // 2. Handle Mongoose Schema Validation error
+    if (error?.name === "ValidationError") {
+      const messages = Object.values(error.errors || {}).map((e: any) => e.message);
+      return NextResponse.json(
+        { error: messages[0] || "Invalid registration data" },
+        { status: 400 }
+      );
+    }
+
+    console.error("[Registration API Error]", error?.name || "Error", error?.message || error);
     return NextResponse.json(
       {
         error: "Registration failed due to a server error. Please try again.",
