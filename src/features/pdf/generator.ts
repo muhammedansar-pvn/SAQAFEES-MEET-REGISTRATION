@@ -7,6 +7,7 @@ interface PassDetails {
   registrationId: string;
   name: string;
   place: string;
+  district?: string;
   shuhba: string;
   qrDataUrl: string;
 }
@@ -81,8 +82,11 @@ export function generatePdfPass(details: PassDetails): Uint8Array {
     doc.setTextColor(19, 34, 56);
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
+    const locationText = details.district
+      ? `${details.place.toUpperCase()} (${details.district.toUpperCase()})`
+      : details.place.toUpperCase();
     doc.text(
-      `${details.shuhba}  |  ${details.place.toUpperCase()}`,
+      `${details.shuhba}  |  ${locationText}`,
       pageWidth / 2,
       cardY + 59,
       { align: "center" }
@@ -153,12 +157,12 @@ export function generatePdfPass(details: PassDetails): Uint8Array {
 
     doc.setTextColor(100, 110, 125);
     doc.setFontSize(8);
-    doc.text("PLACE:", 18, 88);
+    doc.text("PLACE / DISTRICT:", 18, 88);
 
     doc.setTextColor(15, 27, 43);
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.text(details.place, 18, 95);
+    doc.text(details.district ? `${details.place}, ${details.district}` : details.place, 18, 95);
 
     doc.setTextColor(100, 110, 125);
     doc.setFontSize(8);

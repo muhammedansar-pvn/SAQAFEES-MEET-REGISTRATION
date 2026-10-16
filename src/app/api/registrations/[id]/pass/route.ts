@@ -37,6 +37,7 @@ export async function GET(
       registrationId: participant.registrationId,
       name: participant.name,
       place: participant.place,
+      district: participant.district,
       shuhba: participant.shuhba,
       qrDataUrl,
     });

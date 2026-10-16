@@ -5,6 +5,9 @@ export interface IParticipant extends Document {
   registrationId: string;
   name: string;
   place: string;
+  district: string;
+  participateFully: boolean;
+  wantsFood: boolean;
   mobile: string;
   normalizedMobile: string;
   shuhba: string;
@@ -39,6 +42,22 @@ const ParticipantSchema = new Schema<IParticipant>(
       type: String,
       required: true,
       trim: true,
+    },
+    district: {
+      type: String,
+      required: true,
+      trim: true,
+      default: "",
+    },
+    participateFully: {
+      type: Boolean,
+      required: true,
+      default: true,
+    },
+    wantsFood: {
+      type: Boolean,
+      required: true,
+      default: true,
     },
     mobile: {
       type: String,

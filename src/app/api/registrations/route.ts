@@ -42,7 +42,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    const { name, place, mobile, shuhba, whatsappConsent = true } = parseResult.data;
+    const {
+      name,
+      place,
+      district,
+      mobile,
+      shuhba,
+      participateFully,
+      wantsFood,
+      whatsappConsent = true,
+    } = parseResult.data;
     const normalizedMobile = normalizeMobileNumber(mobile);
 
     await connectToDatabase();
@@ -84,6 +93,9 @@ export async function POST(req: NextRequest) {
       registrationId,
       name,
       place,
+      district,
+      participateFully,
+      wantsFood,
       mobile,
       normalizedMobile,
       shuhba,
@@ -113,6 +125,9 @@ export async function POST(req: NextRequest) {
           registrationId: participant.registrationId,
           name: participant.name,
           place: participant.place,
+          district: participant.district,
+          participateFully: participant.participateFully,
+          wantsFood: participant.wantsFood,
           mobile: participant.mobile,
           shuhba: participant.shuhba,
           checkInStatus: participant.checkInStatus,

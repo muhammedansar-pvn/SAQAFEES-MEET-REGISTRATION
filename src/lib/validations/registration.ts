@@ -13,6 +13,11 @@ export const registrationSchema = z.object({
     .trim()
     .min(2, "Place must be at least 2 characters")
     .max(100, "Place must not exceed 100 characters"),
+  district: z
+    .string()
+    .trim()
+    .min(2, "District must be at least 2 characters")
+    .max(100, "District must not exceed 100 characters"),
   mobile: z
     .string()
     .trim()
@@ -23,6 +28,12 @@ export const registrationSchema = z.object({
   shuhba: z.enum(EVENT_CONFIG.shuhbaOptions as unknown as [string, ...string[]], {
     message: "Select a valid department",
   }),
+  participateFully: z.boolean({
+    message: "Please indicate if you will participate fully",
+  }),
+  wantsFood: z.boolean({
+    message: "Please indicate if you want food",
+  }),
   whatsappConsent: z.boolean().default(true).optional(),
 });
 
@@ -31,6 +42,7 @@ export type RegistrationInput = z.infer<typeof registrationSchema>;
 export const adminUpdateParticipantSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   place: z.string().trim().min(2).max(100).optional(),
+  district: z.string().trim().min(2).max(100).optional(),
   mobile: z
     .string()
     .trim()
@@ -39,6 +51,8 @@ export const adminUpdateParticipantSchema = z.object({
     })
     .optional(),
   shuhba: z.enum(EVENT_CONFIG.shuhbaOptions as unknown as [string, ...string[]]).optional(),
+  participateFully: z.boolean().optional(),
+  wantsFood: z.boolean().optional(),
   checkInStatus: z.boolean().optional(),
   checkInNotes: z.string().optional(),
 });

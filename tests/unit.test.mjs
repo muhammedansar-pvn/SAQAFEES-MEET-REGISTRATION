@@ -57,8 +57,11 @@ describe("Zod Registration Form Validation", () => {
     const result = registrationSchema.safeParse({
       name: "Ahmed Kutty",
       place: "Calicut",
+      district: "Kozhikode",
       mobile: "9876543210",
       shuhba: "HADEES",
+      participateFully: true,
+      wantsFood: true,
     });
     assert.equal(result.success, true);
   });
@@ -67,8 +70,11 @@ describe("Zod Registration Form Validation", () => {
     const result = registrationSchema.safeParse({
       name: "",
       place: "Calicut",
+      district: "Kozhikode",
       mobile: "9876543210",
       shuhba: "HADEES",
+      participateFully: true,
+      wantsFood: true,
     });
     assert.equal(result.success, false);
   });
@@ -77,8 +83,11 @@ describe("Zod Registration Form Validation", () => {
     const result = registrationSchema.safeParse({
       name: "Ahmed Kutty",
       place: "Calicut",
+      district: "Kozhikode",
       mobile: "9876543210",
       shuhba: "Unapproved Department",
+      participateFully: true,
+      wantsFood: true,
     });
     assert.equal(result.success, false);
   });
@@ -88,8 +97,11 @@ describe("Zod Registration Form Validation", () => {
       const res = registrationSchema.safeParse({
         name: "Test Participant",
         place: "Kozhikode",
+        district: "Kozhikode",
         mobile: "9846012345",
         shuhba,
+        participateFully: true,
+        wantsFood: true,
       });
       assert.equal(res.success, true, `Shuhba ${shuhba} should be valid`);
     });

@@ -8,6 +8,9 @@ interface ParticipantItem {
   registrationId: string;
   name: string;
   place: string;
+  district?: string;
+  participateFully?: boolean;
+  wantsFood?: boolean;
   mobile: string;
   shuhba: string;
   checkInStatus: boolean;
@@ -33,6 +36,9 @@ export function ParticipantTable() {
   const [editForm, setEditForm] = useState({
     name: "",
     place: "",
+    district: "",
+    participateFully: true,
+    wantsFood: true,
     mobile: "",
     shuhba: "",
     checkInStatus: false,
@@ -96,6 +102,9 @@ export function ParticipantTable() {
     setEditForm({
       name: p.name,
       place: p.place,
+      district: p.district || "",
+      participateFully: p.participateFully ?? true,
+      wantsFood: p.wantsFood ?? true,
       mobile: p.mobile,
       shuhba: p.shuhba,
       checkInStatus: p.checkInStatus,
@@ -207,9 +216,10 @@ export function ParticipantTable() {
             <tr className="border-b border-gray-200 bg-gray-50 text-gray-600 font-semibold">
               <th className="py-2.5 px-3">ID</th>
               <th className="py-2.5 px-3">Name</th>
-              <th className="py-2.5 px-3">Place</th>
+              <th className="py-2.5 px-3">Place / District</th>
               <th className="py-2.5 px-3">Mobile</th>
               <th className="py-2.5 px-3">Shuhba</th>
+              <th className="py-2.5 px-3">Details</th>
               <th className="py-2.5 px-3">Check-in</th>
               <th className="py-2.5 px-3 text-right">Actions</th>
             </tr>
@@ -217,13 +227,13 @@ export function ParticipantTable() {
           <tbody className="divide-y divide-gray-100">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-gray-400">
+                <td colSpan={8} className="py-8 text-center text-gray-400">
                   Loading...
                 </td>
               </tr>
             ) : participants.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-gray-400">
+                <td colSpan={8} className="py-8 text-center text-gray-400">
                   No participants found.
                 </td>
               </tr>
@@ -232,9 +242,22 @@ export function ParticipantTable() {
                 <tr key={p.registrationId} className="hover:bg-gray-50/50">
                   <td className="py-2.5 px-3 font-mono font-medium">{p.registrationId}</td>
                   <td className="py-2.5 px-3 font-medium">{p.name}</td>
-                  <td className="py-2.5 px-3 text-gray-600">{p.place}</td>
+                  <td className="py-2.5 px-3 text-gray-600">
+                    <div>{p.place}</div>
+                    {p.district && <div className="text-[11px] text-gray-400">{p.district}</div>}
+                  </td>
                   <td className="py-2.5 px-3 font-mono text-gray-600">{p.mobile}</td>
                   <td className="py-2.5 px-3">{p.shuhba}</td>
+                  <td className="py-2.5 px-3">
+                    <div className="flex flex-col gap-0.5 text-[11px]">
+                      <span className={p.participateFully !== false ? "text-emerald-700 font-medium" : "text-amber-700"}>
+                        Full: {p.participateFully !== false ? "Yes" : "No"}
+                      </span>
+                      <span className={p.wantsFood !== false ? "text-blue-700" : "text-gray-500"}>
+                        Food: {p.wantsFood !== false ? "Yes" : "No"}
+                      </span>
+                    </div>
+                  </td>
                   <td className="py-2.5 px-3">
                     <button
                       onClick={() => handleToggleCheckIn(p)}
@@ -338,15 +361,27 @@ export function ParticipantTable() {
                 />
               </div>
 
-              <div>
-                <label className="block text-gray-600 mb-1">Place</label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.place}
-                  onChange={(e) => setEditForm({ ...editForm, place: e.target.value })}
-                  className="w-full h-9 px-3 border border-gray-300 rounded text-xs"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-gray-600 mb-1">Place</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.place}
+                    onChange={(e) => setEditForm({ ...editForm, place: e.target.value })}
+                    className="w-full h-9 px-3 border border-gray-300 rounded text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-600 mb-1">District</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.district}
+                    onChange={(e) => setEditForm({ ...editForm, district: e.target.value })}
+                    className="w-full h-9 px-3 border border-gray-300 rounded text-xs"
+                  />
+                </div>
               </div>
 
               <div>
@@ -375,19 +410,51 @@ export function ParticipantTable() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="modalCheckIn"
-                  checked={editForm.checkInStatus}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, checkInStatus: e.target.checked })
-                  }
-                  className="rounded"
-                />
-                <label htmlFor="modalCheckIn" className="text-gray-700">
-                  Mark as Checked In
-                </label>
+              <div className="space-y-2 pt-1 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="modalParticipate"
+                    checked={editForm.participateFully}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, participateFully: e.target.checked })
+                    }
+                    className="rounded"
+                  />
+                  <label htmlFor="modalParticipate" className="text-gray-700">
+                    Will Participate Fully
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="modalWantsFood"
+                    checked={editForm.wantsFood}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, wantsFood: e.target.checked })
+                    }
+                    className="rounded"
+                  />
+                  <label htmlFor="modalWantsFood" className="text-gray-700">
+                    Wants Food
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="modalCheckIn"
+                    checked={editForm.checkInStatus}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, checkInStatus: e.target.checked })
+                    }
+                    className="rounded"
+                  />
+                  <label htmlFor="modalCheckIn" className="text-gray-700 font-medium">
+                    Mark as Checked In
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">

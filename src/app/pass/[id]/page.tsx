@@ -68,7 +68,7 @@ export default async function PassPage(props: PassPageProps) {
             </div>
 
             <p className="text-[10px] text-gray-700 font-semibold truncate">
-              {participant.shuhba} · {participant.place}
+              {participant.shuhba} · {participant.place}{participant.district ? `, ${participant.district}` : ""}
             </p>
             <p className="text-[9px] text-gray-400 mt-0.5">Present at entrance for check-in</p>
           </div>

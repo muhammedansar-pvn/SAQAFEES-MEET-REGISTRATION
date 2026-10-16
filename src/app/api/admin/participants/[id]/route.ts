@@ -58,6 +58,9 @@ export async function PATCH(
 
     if (body.name) participant.name = body.name.trim();
     if (body.place) participant.place = body.place.trim();
+    if (typeof body.district === "string") participant.district = body.district.trim();
+    if (typeof body.participateFully === "boolean") participant.participateFully = body.participateFully;
+    if (typeof body.wantsFood === "boolean") participant.wantsFood = body.wantsFood;
     if (body.shuhba) participant.shuhba = body.shuhba;
 
     if (body.mobile) {

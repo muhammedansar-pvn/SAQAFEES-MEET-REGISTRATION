@@ -10,8 +10,11 @@ export function RegistrationForm() {
   const [formData, setFormData] = useState({
     name: "",
     place: "",
+    district: "",
     mobile: "",
     shuhba: "",
+    participateFully: true,
+    wantsFood: true,
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +35,10 @@ export function RegistrationForm() {
     }
     if (!formData.place.trim()) {
       setErrorMessage("Please enter your place");
+      return;
+    }
+    if (!formData.district.trim()) {
+      setErrorMessage("Please enter your district");
       return;
     }
     if (!formData.mobile.trim()) {
@@ -128,23 +135,39 @@ export function RegistrationForm() {
           />
         </div>
 
-        {/* Field 2: Place */}
-        <div>
-          <label className="block font-medium text-gray-700 mb-1">
-            Place <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            disabled={isLoading}
-            placeholder="Place / District"
-            value={formData.place}
-            onChange={(e) => setFormData({ ...formData, place: e.target.value })}
-            className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
-          />
+        {/* Field 2 & 3: Place & District */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">
+              Place <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              disabled={isLoading}
+              placeholder="e.g. Koduvally"
+              value={formData.place}
+              onChange={(e) => setFormData({ ...formData, place: e.target.value })}
+              className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">
+              District <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              disabled={isLoading}
+              placeholder="e.g. Kozhikode"
+              value={formData.district}
+              onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+              className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
+            />
+          </div>
         </div>
 
-        {/* Field 3: Mobile Number */}
+        {/* Field 4: Mobile Number */}
         <div>
           <label className="block font-medium text-gray-700 mb-1">
             Mobile Number <span className="text-red-500">*</span>
@@ -160,7 +183,7 @@ export function RegistrationForm() {
           />
         </div>
 
-        {/* Field 4: Department */}
+        {/* Field 5: Department */}
         <div>
           <label className="block font-medium text-gray-700 mb-1">
             Department (Shuhba) <span className="text-red-500">*</span>
@@ -181,6 +204,72 @@ export function RegistrationForm() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Field 6: Will You Participate Fully? */}
+        <div>
+          <label className="block font-medium text-gray-700 mb-1.5">
+            Will you participate fully? <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => setFormData({ ...formData, participateFully: true })}
+              className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                formData.participateFully
+                  ? "bg-[#132238] text-white border-[#132238]"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => setFormData({ ...formData, participateFully: false })}
+              className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                !formData.participateFully
+                  ? "bg-[#132238] text-white border-[#132238]"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              No
+            </button>
+          </div>
+        </div>
+
+        {/* Field 7: Do You Want Food? */}
+        <div>
+          <label className="block font-medium text-gray-700 mb-1.5">
+            Do you want food? <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => setFormData({ ...formData, wantsFood: true })}
+              className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                formData.wantsFood
+                  ? "bg-[#132238] text-white border-[#132238]"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => setFormData({ ...formData, wantsFood: false })}
+              className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                !formData.wantsFood
+                  ? "bg-[#132238] text-white border-[#132238]"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              No
+            </button>
+          </div>
         </div>
 
         {/* Submit Button */}
