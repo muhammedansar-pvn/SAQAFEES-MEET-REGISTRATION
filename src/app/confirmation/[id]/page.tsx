@@ -73,17 +73,37 @@ export default async function ConfirmationPage(props: ConfirmationPageProps) {
           </p>
         </div>
 
-        {/* QR Code */}
-        <div className="flex flex-col items-center justify-center p-6 border border-gray-200 rounded-xl bg-white">
+        {/* QR Code Pass Card with Official Poster Background */}
+        <div className="relative mx-auto w-full max-w-[340px] sm:max-w-[360px] rounded-2xl overflow-hidden shadow-lg border border-amber-200/60 bg-[#E8DA80]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={qrDataUrl}
-            alt="Registration QR Code"
-            className="w-48 h-48 object-contain"
+            src="/images/pass-bg.png"
+            alt="Event Poster Background"
+            className="w-full h-auto block select-none"
           />
-          <p className="text-[11px] text-gray-400 mt-2">
-            Present this QR code at the entrance
-          </p>
+
+          {/* Centered Pass Badge with QR Code */}
+          <div className="absolute inset-x-0 top-[37%] flex flex-col items-center justify-center px-4">
+            <div className="bg-white/95 backdrop-blur-xs p-3.5 rounded-xl shadow-md border border-amber-200/80 text-center w-[230px]">
+              <p className="font-bold text-xs text-[#132238] uppercase truncate">{participant.name}</p>
+              <p className="font-mono text-[10px] text-amber-700 font-bold">{participant.registrationId}</p>
+
+              {/* Scannable QR Code */}
+              <div className="my-2 bg-white p-2 rounded-lg inline-block border border-gray-100 shadow-2xs">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrDataUrl}
+                  alt="Registration QR Code"
+                  className="w-32 h-32 object-contain"
+                />
+              </div>
+
+              <p className="text-[10px] text-gray-700 font-semibold truncate">
+                {participant.shuhba} · {participant.place}
+              </p>
+              <p className="text-[9px] text-gray-400 mt-0.5">Present at entrance for check-in</p>
+            </div>
+          </div>
         </div>
 
         {/* Simple Buttons Grid */}
