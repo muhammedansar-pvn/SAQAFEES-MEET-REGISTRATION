@@ -28,12 +28,6 @@ export function Navbar() {
             >
               Find Pass
             </button>
-            <Link
-              href="/admin/login"
-              className="text-gray-400 hover:text-gray-700 transition-colors"
-            >
-              Admin
-            </Link>
           </div>
         </div>
       </header>
