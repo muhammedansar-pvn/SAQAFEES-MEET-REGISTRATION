@@ -24,38 +24,33 @@ export function RegistrationForm() {
     passAccessToken: string;
   } | null>(null);
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setErrorMessage(null);
     setDuplicateInfo(null);
 
     if (!formData.name.trim()) {
       setErrorMessage("Please enter your name");
-      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
       document.getElementById("input-name")?.focus();
       return;
     }
     if (!formData.place.trim()) {
       setErrorMessage("Please enter your place");
-      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
       document.getElementById("input-place")?.focus();
       return;
     }
     if (!formData.district.trim()) {
       setErrorMessage("Please enter your district");
-      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
       document.getElementById("input-district")?.focus();
       return;
     }
     if (!formData.mobile.trim()) {
       setErrorMessage("Please enter your mobile number");
-      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
       document.getElementById("input-mobile")?.focus();
       return;
     }
     if (!formData.shuhba) {
       setErrorMessage("Please select your department");
-      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
       document.getElementById("select-shuhba")?.focus();
       return;
     }
@@ -84,7 +79,6 @@ export function RegistrationForm() {
           setErrorMessage(data.error || "Registration failed. Please try again.");
         }
         setIsLoading(false);
-        document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
         return;
       }
 
@@ -98,32 +92,13 @@ export function RegistrationForm() {
     } catch {
       setErrorMessage("Network error. Please check your connection and try again.");
       setIsLoading(false);
-      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
     }
-  };
-
-  const handleRegisterClick = (e: React.FormEvent) => {
-    // If the form has not been filled out yet, smooth scroll down to the registration form and focus Name
-    const isFormEmpty =
-      !formData.name.trim() &&
-      !formData.place.trim() &&
-      !formData.district.trim() &&
-      !formData.mobile.trim() &&
-      !formData.shuhba;
-
-    if (isFormEmpty) {
-      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
-      document.getElementById("input-name")?.focus();
-      return;
-    }
-
-    handleSubmit(e);
   };
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Event Hero Section */}
-      <div className="max-w-xl w-full text-center space-y-4 mb-10">
+      {/* Event Hero Section — Displaying only Title, Subtitle, Date, Time, Venue */}
+      <div className="max-w-xl w-full text-center space-y-4 mb-8">
         {/* 1. Event title */}
         <h1 className="font-arabic text-4xl sm:text-5xl font-bold text-[#132238] tracking-tight">
           {EVENT_CONFIG.name}
@@ -140,22 +115,10 @@ export function RegistrationForm() {
           <p>{EVENT_CONFIG.timeFormatted}</p>
           <p>{EVENT_CONFIG.venue}</p>
         </div>
-
-        {/* The Single Prominent Register Now Button */}
-        <div className="pt-2">
-          <button
-            type="button"
-            onClick={handleRegisterClick}
-            disabled={isLoading}
-            className="inline-block px-8 py-3 rounded-lg bg-[#132238] hover:bg-[#1a2f4c] text-white font-medium text-sm transition-colors cursor-pointer disabled:opacity-60 shadow-xs"
-          >
-            {isLoading ? "Registering..." : "Register Now"}
-          </button>
-        </div>
       </div>
 
       {/* Clean, Centered Registration Form Section */}
-      <div id="register" className="w-full max-w-md pt-2">
+      <div id="register" className="w-full max-w-md">
         <div className="w-full bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-2xs">
           <div className="mb-6 text-center">
             <h2 className="text-xl font-bold text-[#132238]">Registration</h2>
@@ -341,6 +304,15 @@ export function RegistrationForm() {
                 </button>
               </div>
             </div>
+
+            {/* The Only "Register Now" Button on the page — at the bottom of the registration form */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-11 mt-2 rounded-lg bg-[#132238] hover:bg-[#1a2f4c] text-white font-medium text-sm transition-colors cursor-pointer disabled:opacity-60 shadow-xs"
+            >
+              {isLoading ? "Registering..." : "Register Now"}
+            </button>
           </form>
         </div>
       </div>
