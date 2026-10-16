@@ -165,6 +165,37 @@ export default async function AdminDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Prominent Overall Registration Count Banner at Bottom */}
+      <div className="rounded-2xl p-6 bg-[#132238] text-white shadow-sm border border-[#1e3456] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C5A059]">
+            Official Event Ledger
+          </span>
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight mt-0.5">
+            TOTAL REGISTRATIONS: {totalRegistrations}
+          </h2>
+          <p className="text-xs text-gray-300 mt-1">
+            Real-time count verified directly from MongoDB database
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/participants"
+            className="h-10 px-4 rounded-lg bg-[#C5A059] hover:bg-[#b08c45] text-[#132238] font-bold text-xs flex items-center transition-colors"
+          >
+            Manage Participants →
+          </Link>
+          <a
+            href="/api/admin/export"
+            download
+            className="h-10 px-4 flex items-center rounded-lg border border-gray-400 hover:border-white text-white font-medium text-xs transition-colors"
+          >
+            Export All Records
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

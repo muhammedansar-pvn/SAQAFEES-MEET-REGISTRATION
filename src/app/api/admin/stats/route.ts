@@ -35,16 +35,23 @@ export async function GET() {
       },
     ]);
 
-    const shuhbaStats: Record<string, { total: number; checkedIn: number }> = {};
+    const shuhbaStats: Record<
+      string,
+      { total: number; checkedIn: number; percentage: number }
+    > = {};
     EVENT_CONFIG.shuhbaOptions.forEach((shuhba) => {
-      shuhbaStats[shuhba] = { total: 0, checkedIn: 0 };
+      shuhbaStats[shuhba] = { total: 0, checkedIn: 0, percentage: 0 };
     });
 
     shuhbaAggregation.forEach((item) => {
-      if (item._id) {
+      if (item._id && shuhbaStats[item._id]) {
+        const total = item.count;
+        const percentage =
+          totalRegistrations > 0 ? Math.round((total / totalRegistrations) * 100) : 0;
         shuhbaStats[item._id] = {
-          total: item.count,
+          total,
           checkedIn: item.checkedIn,
+          percentage,
         };
       }
     });

@@ -14,8 +14,10 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search")?.trim() || "";
     const shuhba = searchParams.get("shuhba")?.trim() || "";
     const checkIn = searchParams.get("checkIn")?.trim() || "";
+    const participateFully = searchParams.get("participateFully")?.trim() || "";
+    const wantsFood = searchParams.get("wantsFood")?.trim() || "";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(100, Math.max(10, parseInt(searchParams.get("limit") || "20", 10)));
+    const limit = Math.min(2000, Math.max(1, parseInt(searchParams.get("limit") || "15", 10)));
     const skip = (page - 1) * limit;
 
     await connectToDatabase();
@@ -28,6 +30,7 @@ export async function GET(req: NextRequest) {
         { name: searchRegex },
         { registrationId: searchRegex },
         { place: searchRegex },
+        { district: searchRegex },
         { mobile: searchRegex },
         { normalizedMobile: searchRegex },
       ];
@@ -43,13 +46,26 @@ export async function GET(req: NextRequest) {
       query.checkInStatus = false;
     }
 
-    const [participants, total] = await Promise.all([
+    if (participateFully === "yes") {
+      query.participateFully = true;
+    } else if (participateFully === "no") {
+      query.participateFully = false;
+    }
+
+    if (wantsFood === "yes") {
+      query.wantsFood = true;
+    } else if (wantsFood === "no") {
+      query.wantsFood = false;
+    }
+
+    const [participants, total, overallTotal] = await Promise.all([
       Participant.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .select("-qrTokenHash"),
       Participant.countDocuments(query),
+      Participant.countDocuments({}),
     ]);
 
     return NextResponse.json({
@@ -60,6 +76,7 @@ export async function GET(req: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit),
       },
+      overallTotal,
     });
   } catch (error: any) {
     console.error("[Admin Participants List Error]", error);

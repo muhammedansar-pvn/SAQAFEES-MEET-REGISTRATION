@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const shuhba = searchParams.get("shuhba");
     const checkIn = searchParams.get("checkIn");
+    const participateFully = searchParams.get("participateFully");
+    const wantsFood = searchParams.get("wantsFood");
 
     await connectToDatabase();
 
@@ -20,6 +22,10 @@ export async function GET(req: NextRequest) {
     if (shuhba && shuhba !== "ALL") query.shuhba = shuhba;
     if (checkIn === "checkedIn") query.checkInStatus = true;
     if (checkIn === "notCheckedIn") query.checkInStatus = false;
+    if (participateFully === "yes") query.participateFully = true;
+    if (participateFully === "no") query.participateFully = false;
+    if (wantsFood === "yes") query.wantsFood = true;
+    if (wantsFood === "no") query.wantsFood = false;
 
     const participants = await Participant.find(query).sort({ createdAt: -1 });
 

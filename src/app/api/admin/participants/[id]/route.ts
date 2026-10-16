@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Participant } from "@/models/Participant";
 import { AuditLog } from "@/models/AuditLog";
 import { getSession } from "@/lib/auth";
 import { normalizeMobileNumber } from "@/lib/phone";
+
+function getParticipantQuery(id: string) {
+  const trimmed = id.trim();
+  if (mongoose.Types.ObjectId.isValid(trimmed) && trimmed.length === 24) {
+    return { $or: [{ registrationId: trimmed }, { _id: trimmed }] };
+  }
+  return { registrationId: trimmed };
+}
 
 export async function GET(
   req: NextRequest,
@@ -18,9 +27,7 @@ export async function GET(
     const { id } = await params;
     await connectToDatabase();
 
-    const participant = await Participant.findOne({
-      $or: [{ registrationId: id }, { _id: id }],
-    }).select("-qrTokenHash");
+    const participant = await Participant.findOne(getParticipantQuery(id)).select("-qrTokenHash");
 
     if (!participant) {
       return NextResponse.json({ error: "Participant not found" }, { status: 404 });
@@ -46,9 +53,7 @@ export async function PATCH(
     const body = await req.json();
     await connectToDatabase();
 
-    const participant = await Participant.findOne({
-      $or: [{ registrationId: id }, { _id: id }],
-    });
+    const participant = await Participant.findOne(getParticipantQuery(id));
 
     if (!participant) {
       return NextResponse.json({ error: "Participant not found" }, { status: 404 });
@@ -131,9 +136,7 @@ export async function DELETE(
     const { id } = await params;
     await connectToDatabase();
 
-    const participant = await Participant.findOneAndDelete({
-      $or: [{ registrationId: id }, { _id: id }],
-    });
+    const participant = await Participant.findOneAndDelete(getParticipantQuery(id));
 
     if (!participant) {
       return NextResponse.json({ error: "Participant not found" }, { status: 404 });
