@@ -24,29 +24,39 @@ export function RegistrationForm() {
     passAccessToken: string;
   } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setErrorMessage(null);
     setDuplicateInfo(null);
 
     if (!formData.name.trim()) {
       setErrorMessage("Please enter your name");
+      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("input-name")?.focus();
       return;
     }
     if (!formData.place.trim()) {
       setErrorMessage("Please enter your place");
+      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("input-place")?.focus();
       return;
     }
     if (!formData.district.trim()) {
       setErrorMessage("Please enter your district");
+      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("input-district")?.focus();
       return;
     }
     if (!formData.mobile.trim()) {
       setErrorMessage("Please enter your mobile number");
+      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("input-mobile")?.focus();
       return;
     }
     if (!formData.shuhba) {
       setErrorMessage("Please select your department");
+      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("select-shuhba")?.focus();
       return;
     }
 
@@ -74,6 +84,7 @@ export function RegistrationForm() {
           setErrorMessage(data.error || "Registration failed. Please try again.");
         }
         setIsLoading(false);
+        document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
         return;
       }
 
@@ -87,200 +98,252 @@ export function RegistrationForm() {
     } catch {
       setErrorMessage("Network error. Please check your connection and try again.");
       setIsLoading(false);
+      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
+  const handleRegisterClick = (e: React.FormEvent) => {
+    // If the form has not been filled out yet, smooth scroll down to the registration form and focus Name
+    const isFormEmpty =
+      !formData.name.trim() &&
+      !formData.place.trim() &&
+      !formData.district.trim() &&
+      !formData.mobile.trim() &&
+      !formData.shuhba;
+
+    if (isFormEmpty) {
+      document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("input-name")?.focus();
+      return;
+    }
+
+    handleSubmit(e);
+  };
+
   return (
-    <div className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-xl p-6 sm:p-8">
-      <div className="mb-6 text-center">
-        <h2 className="text-xl font-bold text-[#132238]">Registration</h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Enter your details to receive your event entry pass
-        </p>
+    <div className="w-full flex flex-col items-center">
+      {/* Event Hero Section */}
+      <div className="max-w-xl w-full text-center space-y-4 mb-10">
+        {/* 1. Event title */}
+        <h1 className="font-arabic text-4xl sm:text-5xl font-bold text-[#132238] tracking-tight">
+          {EVENT_CONFIG.name}
+        </h1>
+
+        {/* 2. Subtitle */}
+        <h2 className="text-base sm:text-lg font-semibold text-gray-700 tracking-wide">
+          {EVENT_CONFIG.subtitle}
+        </h2>
+
+        {/* 3, 4, 5. Date, Time, Venue */}
+        <div className="text-xs sm:text-sm text-gray-600 space-y-1 pt-1">
+          <p className="font-medium text-[#132238]">{EVENT_CONFIG.dateFormatted}</p>
+          <p>{EVENT_CONFIG.timeFormatted}</p>
+          <p>{EVENT_CONFIG.venue}</p>
+        </div>
+
+        {/* The Single Prominent Register Now Button */}
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={handleRegisterClick}
+            disabled={isLoading}
+            className="inline-block px-8 py-3 rounded-lg bg-[#132238] hover:bg-[#1a2f4c] text-white font-medium text-sm transition-colors cursor-pointer disabled:opacity-60 shadow-xs"
+          >
+            {isLoading ? "Registering..." : "Register Now"}
+          </button>
+        </div>
       </div>
 
-      {errorMessage && (
-        <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs">
-          <p>{errorMessage}</p>
-          {duplicateInfo && (
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  `/confirmation/${duplicateInfo.registrationId}?token=${duplicateInfo.passAccessToken}`
-                )
-              }
-              className="mt-2 text-xs font-semibold text-[#132238] underline hover:text-[#C5A059]"
-            >
-              View Your Pass →
-            </button>
+      {/* Clean, Centered Registration Form Section */}
+      <div id="register" className="w-full max-w-md pt-2">
+        <div className="w-full bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-2xs">
+          <div className="mb-6 text-center">
+            <h2 className="text-xl font-bold text-[#132238]">Registration</h2>
+            <p className="text-xs text-gray-500 mt-1">
+              Enter your details to receive your event entry pass
+            </p>
+          </div>
+
+          {errorMessage && (
+            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs">
+              <p>{errorMessage}</p>
+              {duplicateInfo && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/confirmation/${duplicateInfo.registrationId}?token=${duplicateInfo.passAccessToken}`
+                    )
+                  }
+                  className="mt-2 text-xs font-semibold text-[#132238] underline hover:text-[#C5A059] cursor-pointer"
+                >
+                  View Your Pass →
+                </button>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-        {/* Field 1: Name */}
-        <div>
-          <label className="block font-medium text-gray-700 mb-1">
-            Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            disabled={isLoading}
-            placeholder="Full Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
-          />
-        </div>
+          <form id="registration-form" onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {/* Field 1: Name */}
+            <div>
+              <label htmlFor="input-name" className="block font-medium text-gray-700 mb-1">
+                Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="input-name"
+                type="text"
+                required
+                disabled={isLoading}
+                placeholder="Full Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
+              />
+            </div>
 
-        {/* Field 2 & 3: Place & District */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block font-medium text-gray-700 mb-1">
-              Place <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              disabled={isLoading}
-              placeholder="e.g. Koduvally"
-              value={formData.place}
-              onChange={(e) => setFormData({ ...formData, place: e.target.value })}
-              className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block font-medium text-gray-700 mb-1">
-              District <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              disabled={isLoading}
-              placeholder="e.g. Kozhikode"
-              value={formData.district}
-              onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-              className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
-            />
-          </div>
-        </div>
+            {/* Field 2 & 3: Place & District */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="input-place" className="block font-medium text-gray-700 mb-1">
+                  Place <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="input-place"
+                  type="text"
+                  required
+                  disabled={isLoading}
+                  placeholder="e.g. Koduvally"
+                  value={formData.place}
+                  onChange={(e) => setFormData({ ...formData, place: e.target.value })}
+                  className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
+                />
+              </div>
+              <div>
+                <label htmlFor="input-district" className="block font-medium text-gray-700 mb-1">
+                  District <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="input-district"
+                  type="text"
+                  required
+                  disabled={isLoading}
+                  placeholder="e.g. Kozhikode"
+                  value={formData.district}
+                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                  className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
+                />
+              </div>
+            </div>
 
-        {/* Field 4: Mobile Number */}
-        <div>
-          <label className="block font-medium text-gray-700 mb-1">
-            Mobile Number <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="tel"
-            required
-            disabled={isLoading}
-            placeholder="10-digit mobile number"
-            value={formData.mobile}
-            onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-            className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
-          />
-        </div>
+            {/* Field 4: Mobile Number */}
+            <div>
+              <label htmlFor="input-mobile" className="block font-medium text-gray-700 mb-1">
+                Mobile Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="input-mobile"
+                type="tel"
+                required
+                disabled={isLoading}
+                placeholder="10-digit mobile number"
+                value={formData.mobile}
+                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] placeholder-gray-400 focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors"
+              />
+            </div>
 
-        {/* Field 5: Department */}
-        <div>
-          <label className="block font-medium text-gray-700 mb-1">
-            Department (Shuhba) <span className="text-red-500">*</span>
-          </label>
-          <select
-            required
-            disabled={isLoading}
-            value={formData.shuhba}
-            onChange={(e) => setFormData({ ...formData, shuhba: e.target.value })}
-            className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] bg-white focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors cursor-pointer"
-          >
-            <option value="" disabled>
-              -- Select Department --
-            </option>
-            {EVENT_CONFIG.shuhbaOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        </div>
+            {/* Field 5: Department */}
+            <div>
+              <label htmlFor="select-shuhba" className="block font-medium text-gray-700 mb-1">
+                Department (Shuhba) <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="select-shuhba"
+                required
+                disabled={isLoading}
+                value={formData.shuhba}
+                onChange={(e) => setFormData({ ...formData, shuhba: e.target.value })}
+                className="w-full h-11 px-3.5 rounded-lg border border-gray-300 text-sm text-[#132238] bg-white focus:outline-none focus:border-[#132238] focus:ring-1 focus:ring-[#132238] transition-colors cursor-pointer"
+              >
+                <option value="" disabled>
+                  -- Select Department --
+                </option>
+                {EVENT_CONFIG.shuhbaOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Field 6: Will You Participate Fully? */}
-        <div>
-          <label className="block font-medium text-gray-700 mb-1.5">
-            Will you participate fully? <span className="text-red-500">*</span>
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={() => setFormData({ ...formData, participateFully: true })}
-              className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
-                formData.participateFully
-                  ? "bg-[#132238] text-white border-[#132238]"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              Yes
-            </button>
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={() => setFormData({ ...formData, participateFully: false })}
-              className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
-                !formData.participateFully
-                  ? "bg-[#132238] text-white border-[#132238]"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              No
-            </button>
-          </div>
-        </div>
+            {/* Field 6: Will You Participate Fully? */}
+            <div>
+              <label className="block font-medium text-gray-700 mb-1.5">
+                Will you participate fully? <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => setFormData({ ...formData, participateFully: true })}
+                  className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                    formData.participateFully
+                      ? "bg-[#132238] text-white border-[#132238]"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  }`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => setFormData({ ...formData, participateFully: false })}
+                  className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                    !formData.participateFully
+                      ? "bg-[#132238] text-white border-[#132238]"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  }`}
+                >
+                  No
+                </button>
+              </div>
+            </div>
 
-        {/* Field 7: Do You Want Food? */}
-        <div>
-          <label className="block font-medium text-gray-700 mb-1.5">
-            Do you want food? <span className="text-red-500">*</span>
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={() => setFormData({ ...formData, wantsFood: true })}
-              className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
-                formData.wantsFood
-                  ? "bg-[#132238] text-white border-[#132238]"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              Yes
-            </button>
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={() => setFormData({ ...formData, wantsFood: false })}
-              className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
-                !formData.wantsFood
-                  ? "bg-[#132238] text-white border-[#132238]"
-                  : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              No
-            </button>
-          </div>
+            {/* Field 7: Do You Want Food? */}
+            <div>
+              <label className="block font-medium text-gray-700 mb-1.5">
+                Do you want food? <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => setFormData({ ...formData, wantsFood: true })}
+                  className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                    formData.wantsFood
+                      ? "bg-[#132238] text-white border-[#132238]"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  }`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => setFormData({ ...formData, wantsFood: false })}
+                  className={`h-11 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                    !formData.wantsFood
+                      ? "bg-[#132238] text-white border-[#132238]"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                  }`}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-11 mt-2 rounded-lg bg-[#132238] hover:bg-[#1a2f4c] text-white font-medium text-sm transition-colors cursor-pointer disabled:opacity-60"
-        >
-          {isLoading ? "Registering..." : "Register Now"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
