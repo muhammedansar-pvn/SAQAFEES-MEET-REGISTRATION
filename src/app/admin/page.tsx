@@ -61,44 +61,56 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
+        <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 text-xs w-full sm:w-auto">
           <Link
             href="/admin/scanner"
-            className="px-3.5 py-2 rounded-lg bg-[#132238] hover:bg-[#1a2f4c] text-white font-medium transition-colors"
+            className="px-2.5 sm:px-3.5 py-2 rounded-lg bg-[#132238] hover:bg-[#1a2f4c] text-white font-medium transition-colors text-center truncate"
           >
-            Open Scanner
+            Scanner
           </Link>
           <Link
             href="/admin/participants"
-            className="px-3.5 py-2 rounded-lg border border-gray-300 hover:border-gray-400 font-medium transition-colors"
+            className="px-2.5 sm:px-3.5 py-2 rounded-lg border border-gray-300 hover:border-gray-400 font-medium transition-colors text-center truncate"
           >
             Participants
           </Link>
           <a
             href="/api/admin/export"
             download
-            className="px-3.5 py-2 rounded-lg border border-gray-300 hover:border-gray-400 font-medium transition-colors"
+            className="px-2.5 sm:px-3.5 py-2 rounded-lg border border-gray-300 hover:border-gray-400 font-medium transition-colors text-center truncate"
           >
-            Export CSV
+            CSV
           </a>
         </div>
       </div>
 
       {/* Summary Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="border border-gray-200 rounded-xl p-5">
-          <span className="text-xs text-gray-500 font-medium">Total Registrations</span>
-          <p className="text-2xl font-bold mt-1 text-[#132238]">{totalRegistrations}</p>
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+        <div className="border border-gray-200 rounded-xl p-3 sm:p-5">
+          <span className="text-[10px] sm:text-xs text-gray-500 font-medium truncate block">
+            Total
+          </span>
+          <p className="text-lg sm:text-2xl font-bold mt-0.5 sm:mt-1 text-[#132238]">
+            {totalRegistrations}
+          </p>
         </div>
 
-        <div className="border border-gray-200 rounded-xl p-5">
-          <span className="text-xs text-gray-500 font-medium">Checked In</span>
-          <p className="text-2xl font-bold mt-1 text-emerald-700">{checkedInCount}</p>
+        <div className="border border-gray-200 rounded-xl p-3 sm:p-5">
+          <span className="text-[10px] sm:text-xs text-gray-500 font-medium truncate block">
+            Checked In
+          </span>
+          <p className="text-lg sm:text-2xl font-bold mt-0.5 sm:mt-1 text-emerald-700">
+            {checkedInCount}
+          </p>
         </div>
 
-        <div className="border border-gray-200 rounded-xl p-5">
-          <span className="text-xs text-gray-500 font-medium">Pending Check-in</span>
-          <p className="text-2xl font-bold mt-1 text-gray-700">{pendingCheckInCount}</p>
+        <div className="border border-gray-200 rounded-xl p-3 sm:p-5">
+          <span className="text-[10px] sm:text-xs text-gray-500 font-medium truncate block">
+            Pending
+          </span>
+          <p className="text-lg sm:text-2xl font-bold mt-0.5 sm:mt-1 text-gray-700">
+            {pendingCheckInCount}
+          </p>
         </div>
       </div>
 
@@ -167,7 +179,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Prominent Overall Registration Count Banner at Bottom */}
-      <div className="rounded-2xl p-6 bg-[#132238] text-white shadow-sm border border-[#1e3456] flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="rounded-2xl p-5 sm:p-6 bg-[#132238] text-white shadow-sm border border-[#1e3456] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C5A059]">
             Official Event Ledger
@@ -180,17 +192,17 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
           <Link
             href="/admin/participants"
-            className="h-10 px-4 rounded-lg bg-[#C5A059] hover:bg-[#b08c45] text-[#132238] font-bold text-xs flex items-center transition-colors"
+            className="h-10 px-4 rounded-lg bg-[#C5A059] hover:bg-[#b08c45] text-[#132238] font-bold text-xs flex items-center justify-center transition-colors text-center"
           >
             Manage Participants →
           </Link>
           <a
             href="/api/admin/export"
             download
-            className="h-10 px-4 flex items-center rounded-lg border border-gray-400 hover:border-white text-white font-medium text-xs transition-colors"
+            className="h-10 px-4 flex items-center justify-center rounded-lg border border-gray-400 hover:border-white text-white font-medium text-xs transition-colors text-center"
           >
             Export All Records
           </a>

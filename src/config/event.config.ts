@@ -1,5 +1,5 @@
 export const EVENT_CONFIG = {
-  name: "لقاء",
+  name: "اللقاء",
   subtitle: "2025 Saqafees Meet",
   dateFormatted: "Saturday, 21 November 2026",
   timeFormatted: "10:00 AM – 2:00 PM",
@@ -8,19 +8,19 @@ export const EVENT_CONFIG = {
   startDateTimeISO: "2026-11-21T10:00:00+05:30",
   endDateTimeISO: "2026-11-21T14:00:00+05:30",
   contact: {
-    phone: "+91 98765 43210",
+    phone: "+91 7994050309",
     email: "info@saqafees.org",
-    location: "Markaz Knowledge City / Jamia Markaz, Calicut, Kerala",
+    location: "Jamia Markaz, Calicut, Kerala",
   },
   shuhbaOptions: [
     "HADEES",
     "THAFSEER",
     "SHAREEA",
-    "ILUMU NAFS",
-    "IMUL IDARA",
+    "ILMUL NAFS",
+    "ILMUL IDARA",
     "THAKHASSUS",
     "WIRAS",
-    "LUGA",
+    "LUGA ARABIC",
   ] as const,
   whatsappMessageTemplate: `🌿 *لقاء – 2025 Saqafees Meet*
 

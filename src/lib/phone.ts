@@ -56,3 +56,18 @@ export function formatMobileDisplay(normalizedOrRaw: string): string {
   }
   return norm ? `+${norm}` : "";
 }
+
+/**
+ * Generates standard WhatsApp Click-to-Chat URL
+ * Format: https://wa.me/<international_phone_number>?text=<url_encoded_message>
+ * Handles Indian numbers carefully, strips non-digits, avoids duplicate + or country codes,
+ * and encodes message text safely using encodeURIComponent.
+ */
+export function generateWhatsAppClickToChatUrl(rawNumber: string, messageText: string): string {
+  const normalized = normalizeMobileNumber(rawNumber);
+  if (!isValidMobileNumber(rawNumber) || !normalized) {
+    return "";
+  }
+  return `https://wa.me/${normalized}?text=${encodeURIComponent(messageText)}`;
+}
+

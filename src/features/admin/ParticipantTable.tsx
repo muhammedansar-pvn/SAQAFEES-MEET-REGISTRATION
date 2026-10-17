@@ -101,6 +101,29 @@ export function ParticipantTable() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // WhatsApp Resend State
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const handleResendWhatsApp = async (p: ParticipantItem) => {
+    try {
+      setResendingId(p.registrationId);
+      const res = await fetch(`/api/admin/participants/${p.registrationId}/resend-whatsapp`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || "Failed to send WhatsApp message", "error");
+      } else {
+        showToast(`WhatsApp message ${data.status} for ${p.name}!`, "success");
+        fetchParticipants();
+      }
+    } catch {
+      showToast("Network error resending WhatsApp message", "error");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const showToast = useCallback((message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
     setTimeout(() => {
@@ -461,17 +484,17 @@ export function ParticipantTable() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Prominent WhatsApp Report Button */}
           <button
             type="button"
             onClick={() => handleCopyWhatsAppReport(false)}
             disabled={isCopyingReport}
-            className="h-9 px-3.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 shadow-xs"
+            className="h-9 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 shadow-xs text-center truncate"
             title="Copy formatted WhatsApp registration summary"
           >
-            <span className="text-sm">📋</span>
-            <span>{isCopyingReport ? "Generating..." : "Copy WhatsApp Report"}</span>
+            <span className="text-xs">📋</span>
+            <span className="truncate">{isCopyingReport ? "..." : "WA Report"}</span>
           </button>
 
           {/* Optional Detailed WhatsApp Report */}
@@ -479,11 +502,21 @@ export function ParticipantTable() {
             type="button"
             onClick={() => handleCopyWhatsAppReport(true)}
             disabled={isCopyingReport}
-            className="h-9 px-3 rounded-lg border border-gray-300 hover:border-gray-400 bg-white font-medium text-gray-700 transition-colors cursor-pointer disabled:opacity-60"
+            className="h-9 px-3 rounded-lg border border-gray-300 hover:border-gray-400 bg-white font-medium text-gray-700 transition-colors cursor-pointer disabled:opacity-60 text-center truncate"
             title="Copy detailed participant breakdown for WhatsApp"
           >
-            Copy Detailed Report
+            Detailed Report
           </button>
+
+          {/* Direct Link to WhatsApp Broadcast */}
+          <a
+            href="/admin/whatsapp"
+            className="h-9 px-3 rounded-lg bg-[#132238] hover:bg-[#1a2f4c] text-white font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-xs text-center truncate"
+            title="Launch WhatsApp bulk messaging queue"
+          >
+            <span className="text-xs">💬</span>
+            <span>Broadcast</span>
+          </a>
 
           <button
             type="button"
@@ -492,7 +525,7 @@ export function ParticipantTable() {
               fetchStats();
               showToast("Dashboard refreshed");
             }}
-            className="h-9 px-2.5 rounded-lg border border-gray-300 hover:border-gray-400 bg-white text-gray-600 transition-colors cursor-pointer"
+            className="h-9 px-2.5 rounded-lg border border-gray-300 hover:border-gray-400 bg-white text-gray-600 transition-colors cursor-pointer flex items-center justify-center text-center"
             title="Refresh statistics and participant table"
           >
             ↻
@@ -602,9 +635,9 @@ export function ParticipantTable() {
 
       {/* 1. Registration Filters Section */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           {/* Search Box */}
-          <div className="flex-1 max-w-sm">
+          <div className="flex-1 w-full sm:max-w-sm">
             <input
               type="text"
               placeholder="Search name, place, district, phone, ID..."
@@ -615,7 +648,7 @@ export function ParticipantTable() {
           </div>
 
           {/* Quick Action Export CSV */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <a
               href={`/api/admin/export?shuhba=${encodeURIComponent(shuhbaFilter)}&checkIn=${encodeURIComponent(
                 checkInFilter
@@ -623,7 +656,7 @@ export function ParticipantTable() {
                 foodFilter
               )}`}
               download
-              className="h-10 px-3.5 flex items-center gap-1.5 rounded-lg border border-gray-300 hover:border-gray-400 font-medium transition-colors bg-white"
+              className="flex-1 sm:flex-none h-10 px-3.5 flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 hover:border-gray-400 font-medium transition-colors bg-white text-center"
               title="Export currently filtered list as CSV"
             >
               <span>Export CSV</span>
@@ -634,9 +667,9 @@ export function ParticipantTable() {
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="h-10 px-3 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 font-medium transition-colors cursor-pointer text-xs"
+                className="h-10 px-3 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 font-medium transition-colors cursor-pointer text-xs shrink-0"
               >
-                Reset Filters
+                Reset
               </button>
             )}
           </div>
@@ -719,20 +752,20 @@ export function ParticipantTable() {
         </div>
 
         {/* Filter Summary Counter */}
-        <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-600">
-          <div className="flex items-center gap-1.5">
+        <div className="pt-2 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-600">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span>
               Showing <strong className="text-[#132238]">{participants.length}</strong> of{" "}
-              <strong className="text-[#132238]">{totalCount}</strong> filtered participants
+              <strong className="text-[#132238]">{totalCount}</strong> filtered
             </span>
             <span className="text-gray-400">·</span>
             <span className="text-gray-500">
-              Overall Total in Database: <strong className="text-[#132238]">{overallTotal}</strong>
+              Total: <strong className="text-[#132238]">{overallTotal}</strong>
             </span>
           </div>
 
           {hasActiveFilters && (
-            <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium border border-amber-200">
+            <span className="self-start sm:self-auto text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium border border-amber-200">
               Active Filters Applied
             </span>
           )}
@@ -752,19 +785,20 @@ export function ParticipantTable() {
                 <th className="py-2.5 px-3">Shuhba</th>
                 <th className="py-2.5 px-3">Attendance & Food</th>
                 <th className="py-2.5 px-3">Check-in</th>
+                <th className="py-2.5 px-3">WhatsApp</th>
                 <th className="py-2.5 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-xs">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-gray-400">
+                  <td colSpan={9} className="py-12 text-center text-gray-400">
                     Loading participants...
                   </td>
                 </tr>
               ) : participants.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-gray-400">
+                  <td colSpan={9} className="py-12 text-center text-gray-400">
                     <p className="font-medium text-gray-600">No participants match your criteria.</p>
                     {hasActiveFilters && (
                       <button
@@ -828,7 +862,50 @@ export function ParticipantTable() {
                         {p.checkInStatus ? "✓ Checked In" : "Pending"}
                       </button>
                     </td>
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
+                            p.whatsappStatus === "delivered"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : p.whatsappStatus === "sent"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : p.whatsappStatus === "failed"
+                              ? "bg-red-50 text-red-700 border border-red-200"
+                              : p.whatsappStatus === "simulated"
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : "bg-gray-100 text-gray-500 border border-gray-200"
+                          }`}
+                        >
+                          {p.whatsappStatus === "delivered" && "✓ Delivered"}
+                          {p.whatsappStatus === "sent" && "✓ Sent"}
+                          {p.whatsappStatus === "failed" && "✕ Failed"}
+                          {p.whatsappStatus === "simulated" && "⚡ Mocked"}
+                          {(!p.whatsappStatus || p.whatsappStatus === "pending") && "⏳ Pending"}
+                        </span>
+                        {p.whatsappStatus === "failed" && (
+                          <button
+                            type="button"
+                            onClick={() => handleResendWhatsApp(p)}
+                            disabled={resendingId === p.registrationId}
+                            className="text-[10px] text-red-600 hover:text-red-800 underline cursor-pointer"
+                            title="Retry sending WhatsApp confirmation"
+                          >
+                            {resendingId === p.registrationId ? "..." : "Retry"}
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-2.5 px-3 text-right space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => handleResendWhatsApp(p)}
+                        disabled={resendingId === p.registrationId}
+                        className="text-emerald-700 hover:underline cursor-pointer font-medium"
+                        title="Send or resend WhatsApp confirmation"
+                      >
+                        {resendingId === p.registrationId ? "..." : "WA"}
+                      </button>
                       <a
                         href={`/api/registrations/${p.registrationId}/pass?token=${p.passAccessToken}`}
                         download={`Pass-${p.registrationId}.pdf`}
@@ -903,18 +980,18 @@ export function ParticipantTable() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
           <button
             type="button"
             onClick={() => handleCopyWhatsAppReport(false)}
-            className="h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors cursor-pointer"
+            className="h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center"
           >
             Copy WhatsApp Report
           </button>
           <a
             href="/api/admin/export"
             download
-            className="h-10 px-4 flex items-center rounded-lg border border-gray-400 hover:border-white text-white font-medium text-xs transition-colors"
+            className="h-10 px-4 flex items-center justify-center rounded-lg border border-gray-400 hover:border-white text-white font-medium text-xs transition-colors text-center"
           >
             Export All Records
           </a>

@@ -5,6 +5,7 @@ import { Participant } from "@/models/Participant";
 import { EVENT_CONFIG } from "@/config/event.config";
 import { generateQrDataUrl, getVerificationUrl } from "@/features/qr/generator";
 import { generateGoogleCalendarUrl } from "@/features/calendar/generator";
+import { getSession } from "@/lib/auth";
 
 interface ConfirmationPageProps {
   params: Promise<{ id: string }>;
@@ -22,7 +23,8 @@ export default async function ConfirmationPage(props: ConfirmationPageProps) {
     notFound();
   }
 
-  if (token && participant.passAccessToken !== token) {
+  const adminSession = await getSession();
+  if (!adminSession && (!token || participant.passAccessToken !== token)) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4 text-center">
         <div className="max-w-sm w-full p-6 border border-red-200 rounded-xl">

@@ -15,6 +15,7 @@ export function RegistrationForm() {
     shuhba: "",
     participateFully: true,
     wantsFood: true,
+    whatsappConsent: true,
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -303,6 +304,24 @@ export function RegistrationForm() {
                   No
                 </button>
               </div>
+            </div>
+
+            {/* Field 8: WhatsApp Confirmation Consent */}
+            <div className="pt-1">
+              <label className="flex items-start gap-2.5 text-xs text-gray-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  disabled={isLoading}
+                  checked={formData.whatsappConsent}
+                  onChange={(e) =>
+                    setFormData({ ...formData, whatsappConsent: e.target.checked })
+                  }
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#132238] focus:ring-[#132238] cursor-pointer"
+                />
+                <span>
+                  Receive confirmation and entry pass link on WhatsApp (<strong>{formData.mobile || "your registered number"}</strong>)
+                </span>
+              </label>
             </div>
 
             {/* The Only "Register Now" Button on the page — at the bottom of the registration form */}

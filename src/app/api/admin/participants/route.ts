@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search")?.trim() || "";
     const shuhba = searchParams.get("shuhba")?.trim() || "";
+    const district = searchParams.get("district")?.trim() || "";
     const checkIn = searchParams.get("checkIn")?.trim() || "";
     const participateFully = searchParams.get("participateFully")?.trim() || "";
     const wantsFood = searchParams.get("wantsFood")?.trim() || "";
@@ -38,6 +39,10 @@ export async function GET(req: NextRequest) {
 
     if (shuhba && shuhba !== "ALL") {
       query.shuhba = shuhba;
+    }
+
+    if (district && district !== "ALL") {
+      query.district = new RegExp(`^${district}$`, "i");
     }
 
     if (checkIn === "checkedIn") {

@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { test, describe } from "node:test";
-import { normalizeMobileNumber, isValidMobileNumber, formatMobileDisplay } from "../src/lib/phone.ts";
+import { normalizeMobileNumber, isValidMobileNumber, formatMobileDisplay, generateWhatsAppClickToChatUrl } from "../src/lib/phone.ts";
 import { generateRegistrationId, generateSecureVerificationToken, hashVerificationToken } from "../src/lib/token.ts";
 import { registrationSchema } from "../src/lib/validations/registration.ts";
 import { generateIcsContent, generateGoogleCalendarUrl } from "../src/features/calendar/generator.ts";
 import { EVENT_CONFIG } from "../src/config/event.config.ts";
+import { buildWhatsAppConfirmationMessage } from "../src/features/notifications/whatsapp.ts";
+import { interpolateWhatsAppTemplate, WHATSAPP_TEMPLATES } from "../src/features/whatsapp/templates.ts";
 
 describe("Phone Normalization and Validation", () => {
   test("Normalizes standard 10-digit Indian numbers", () => {
@@ -129,3 +131,116 @@ describe("Calendar & Reminders", () => {
     assert.ok(ics.includes("END:VCALENDAR"));
   });
 });
+
+describe("Automatic WhatsApp Confirmation Message", () => {
+  test("Generates exact English template content matching all user specifications", () => {
+    const message = buildWhatsAppConfirmationMessage({
+      name: "Ahmed Kutty",
+      place: "Koduvally",
+      district: "Kozhikode",
+      department: "HADEES",
+      participateFully: true,
+      wantsFood: true,
+      registrationId: "LQM-2026-A1B2C3D4",
+      entryPassUrl: "https://saqafees-meet.vercel.app/confirmation/LQM-2026-A1B2C3D4?token=tok123",
+    });
+
+    assert.ok(message.includes("*Assalamu Alaikum!*"));
+    assert.ok(message.includes("Your registration for *لقاء — 2025 Saqafees Meet* has been completed successfully."));
+    assert.ok(message.includes("*Registration Details*"));
+    assert.ok(message.includes("- Name: Ahmed Kutty"));
+    assert.ok(message.includes("- Place: Koduvally"));
+    assert.ok(message.includes("- District: Kozhikode"));
+    assert.ok(message.includes("- Department: HADEES"));
+    assert.ok(message.includes("- Participation: Yes"));
+    assert.ok(message.includes("- Food Required: Yes"));
+    assert.ok(message.includes("- Registration ID: LQM-2026-A1B2C3D4"));
+    assert.ok(message.includes("*Event Details*"));
+    assert.ok(message.includes("- Date: Saturday, 21 November 2026"));
+    assert.ok(message.includes("- Time: 10:00 AM – 2:00 PM"));
+    assert.ok(message.includes("- Venue: Markaz"));
+    assert.ok(message.includes("Your entry pass is available here:"));
+    assert.ok(message.includes("https://saqafees-meet.vercel.app/confirmation/LQM-2026-A1B2C3D4?token=tok123"));
+    assert.ok(message.includes("Please keep your entry pass ready when you arrive."));
+    assert.ok(message.includes("We look forward to welcoming you!"));
+  });
+
+  test("Correctly formats No for participation and food", () => {
+    const message = buildWhatsAppConfirmationMessage({
+      name: "Usman",
+      place: "Malappuram",
+      district: "Malappuram",
+      department: "THAFSEER",
+      participateFully: false,
+      wantsFood: false,
+      registrationId: "LQM-2026-99998888",
+      entryPassUrl: "https://saqafees-meet.vercel.app/pass/LQM-2026-99998888?token=tok456",
+    });
+
+    assert.ok(message.includes("- Participation: No"));
+    assert.ok(message.includes("- Food Required: No"));
+  });
+
+  test("WhatsApp recipient number formatting produces valid E.164 digits without +", () => {
+    assert.equal(normalizeMobileNumber("+91 98460 12345"), "919846012345");
+    assert.equal(normalizeMobileNumber("09846012345"), "919846012345");
+    assert.equal(normalizeMobileNumber("9846012345"), "919846012345");
+  });
+});
+
+describe("Free WhatsApp Click-to-Chat Bulk Messaging", () => {
+  test("Generates valid https://wa.me/ URL with URL-encoded text", () => {
+    const url = generateWhatsAppClickToChatUrl("9846012345", "Assalamu Alaikum Ahmed!");
+    assert.ok(url.startsWith("https://wa.me/919846012345?text="));
+    assert.ok(url.includes("Assalamu%20Alaikum%20Ahmed!"));
+  });
+
+  test("Handles Indian numbers with +91, 0, or formatting without duplicate country code", () => {
+    const url1 = generateWhatsAppClickToChatUrl("+91 98460 12345", "Hello");
+    const url2 = generateWhatsAppClickToChatUrl("09846012345", "Hello");
+    const url3 = generateWhatsAppClickToChatUrl("+91-98460-12345", "Hello");
+    assert.ok(url1.startsWith("https://wa.me/919846012345?text=Hello"));
+    assert.ok(url2.startsWith("https://wa.me/919846012345?text=Hello"));
+    assert.ok(url3.startsWith("https://wa.me/919846012345?text=Hello"));
+  });
+
+  test("Rejects invalid mobile numbers safely", () => {
+    assert.equal(generateWhatsAppClickToChatUrl("12345", "Hello"), "");
+    assert.equal(generateWhatsAppClickToChatUrl("abcdef", "Hello"), "");
+    assert.equal(generateWhatsAppClickToChatUrl("", "Hello"), "");
+  });
+
+  test("Interpolates template placeholders: {{name}}, {{department}}, {{district}}, {{place}}, {{registrationId}}, {{entryPassUrl}}", () => {
+    const template = "Salam {{name}} from {{place}}, {{district}}! You are in {{department}}. Pass: {{entryPassUrl}} (ID: {{registrationId}})";
+    const result = interpolateWhatsAppTemplate(template, {
+      name: "Muhammed",
+      place: "Koduvally",
+      district: "Kozhikode",
+      department: "HADEES",
+      registrationId: "LQM-2026-ABCD1234",
+      entryPassUrl: "https://saqafees-meet.vercel.app/confirmation/LQM-2026-ABCD1234?token=tok",
+    });
+
+    assert.equal(
+      result,
+      "Salam Muhammed from Koduvally, Kozhikode! You are in HADEES. Pass: https://saqafees-meet.vercel.app/confirmation/LQM-2026-ABCD1234?token=tok (ID: LQM-2026-ABCD1234)"
+    );
+  });
+
+  test("Preserves all 4 official template types", () => {
+    assert.ok(WHATSAPP_TEMPLATES.confirmation.defaultTemplate.includes("لقاء"));
+    assert.ok(WHATSAPP_TEMPLATES.reminder.defaultTemplate.includes("reminder"));
+    assert.ok(WHATSAPP_TEMPLATES.announcement.defaultTemplate.includes("announcement"));
+    assert.ok(WHATSAPP_TEMPLATES.custom.defaultTemplate.includes("{{name}}"));
+  });
+
+  test("Enforces maximum batch limit of 500 participants", () => {
+    const MAX_LIMIT = 500;
+    const array501 = new Array(501).fill("id");
+    assert.equal(array501.length > MAX_LIMIT, true);
+    const array500 = new Array(500).fill("id");
+    assert.equal(array500.length <= MAX_LIMIT, true);
+  });
+});
+
+

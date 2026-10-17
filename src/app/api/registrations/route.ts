@@ -107,11 +107,24 @@ export async function POST(req: NextRequest) {
     });
 
     // 7. Fire WhatsApp notification in background (non-blocking)
+    const baseUrl =
+      req.nextUrl?.origin ||
+      req.headers.get("origin") ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+
     sendWhatsAppConfirmation({
       participantId: participant._id.toString(),
       registrationId: participant.registrationId,
       recipientMobile: participant.mobile,
       recipientName: participant.name,
+      place: participant.place,
+      district: participant.district,
+      department: participant.shuhba,
+      participateFully: participant.participateFully,
+      wantsFood: participant.wantsFood,
+      passAccessToken: participant.passAccessToken,
+      baseUrl,
     }).catch((err) => console.error("[WhatsApp Trigger Error]", err));
 
     return NextResponse.json(

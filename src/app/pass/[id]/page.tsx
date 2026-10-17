@@ -4,6 +4,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { Participant } from "@/models/Participant";
 import { EVENT_CONFIG } from "@/config/event.config";
 import { generateQrDataUrl, getVerificationUrl } from "@/features/qr/generator";
+import { getSession } from "@/lib/auth";
 import { PrinterButton } from "./PrinterButton";
 
 interface PassPageProps {
@@ -22,7 +23,8 @@ export default async function PassPage(props: PassPageProps) {
     notFound();
   }
 
-  if (token && participant.passAccessToken !== token) {
+  const adminSession = await getSession();
+  if (!adminSession && (!token || participant.passAccessToken !== token)) {
     notFound();
   }
 

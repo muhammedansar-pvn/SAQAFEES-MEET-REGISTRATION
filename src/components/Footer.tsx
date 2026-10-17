@@ -1,5 +1,3 @@
-import { EVENT_CONFIG } from "@/config/event.config";
-
 export function Footer() {
   return (
     <footer className="w-full bg-white border-t border-gray-100 py-8 text-center text-xs text-gray-400">
@@ -7,9 +5,7 @@ export function Footer() {
         <p className="font-arabic text-sm text-gray-600 mb-1" dir="rtl">
           مرحبا بكم جميعا
         </p>
-        <p>
-          © 2026 {EVENT_CONFIG.name} — {EVENT_CONFIG.subtitle} · {EVENT_CONFIG.venue}
-        </p>
+      
       </div>
     </footer>
   );
