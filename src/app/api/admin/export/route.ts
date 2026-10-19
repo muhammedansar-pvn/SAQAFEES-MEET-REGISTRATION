@@ -47,7 +47,6 @@ export async function GET(req: NextRequest) {
       "Check-in Status",
       "Checked-in At",
       "Checked-in By",
-      "WhatsApp Status",
       "Registered At",
     ];
 
@@ -63,7 +62,6 @@ export async function GET(req: NextRequest) {
       escapeCsv(p.checkInStatus ? "Checked In" : "Pending"),
       escapeCsv(p.checkedInAt ? p.checkedInAt.toISOString() : ""),
       escapeCsv(p.checkedInBy || ""),
-      escapeCsv(p.whatsappStatus),
       escapeCsv(p.createdAt.toISOString()),
     ]);
 

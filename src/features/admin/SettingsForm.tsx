@@ -12,7 +12,7 @@ interface SettingsFormProps {
     venue: string;
     venueMalayalam?: string;
     shuhbaOptions: string[];
-    whatsappMessageTemplate: string;
+    whatsappMessageTemplate?: string;
     contactPhone: string;
     contactEmail: string;
   };
@@ -107,18 +107,6 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
             />
           </div>
         </div>
-      </div>
-
-      {/* WhatsApp Message Template */}
-      <div className="border border-gray-200 rounded-xl p-4 space-y-2">
-        <h3 className="font-bold text-sm">WhatsApp Confirmation Template</h3>
-        <p className="text-gray-500">Official message sent to attendees upon registration</p>
-        <textarea
-          rows={8}
-          value={form.whatsappMessageTemplate}
-          onChange={(e) => setForm({ ...form, whatsappMessageTemplate: e.target.value })}
-          className="w-full p-3 border border-gray-300 rounded-lg font-mono text-xs focus:outline-none focus:border-[#132238]"
-        />
       </div>
 
       {/* Submit */}

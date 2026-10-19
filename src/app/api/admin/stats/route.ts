@@ -56,31 +56,7 @@ export async function GET() {
       }
     });
 
-    // 3. WhatsApp statistics
-    const whatsappAggregation = await Participant.aggregate([
-      {
-        $group: {
-          _id: "$whatsappStatus",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const whatsappStats: Record<string, number> = {
-      pending: 0,
-      sent: 0,
-      delivered: 0,
-      simulated: 0,
-      failed: 0,
-    };
-
-    whatsappAggregation.forEach((item) => {
-      if (item._id && whatsappStats[item._id] !== undefined) {
-        whatsappStats[item._id] = item.count;
-      }
-    });
-
-    // 4. Recent activity
+    // 3. Recent activity
     const recentRegistrations = await Participant.find()
       .sort({ createdAt: -1 })
       .limit(5)
@@ -99,7 +75,6 @@ export async function GET() {
         checkInRate,
       },
       shuhbaStats,
-      whatsappStats,
       recentRegistrations,
       recentCheckIns,
     });

@@ -46,7 +46,7 @@ export default async function SettingsPage() {
       <div className="border-b border-gray-200 pb-3">
         <h1 className="text-xl font-bold">Event Settings</h1>
         <p className="text-xs text-gray-500 mt-0.5">
-          Configure registration status, WhatsApp messages, and contact information.
+          Configure registration status and contact information.
         </p>
       </div>
 

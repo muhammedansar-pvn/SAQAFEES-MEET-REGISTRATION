@@ -49,18 +49,12 @@ A production-ready full-stack event registration and QR pass management web appl
   - 1 day (24 hours) prior
   - 1 hour prior
 
-### 💬 WhatsApp Cloud API Integration
-- **Automated Confirmation**: Sends the official personalized Malayalam welcome and registration confirmation upon database commit.
-- **Dev Simulation Mode**: When credentials are not yet configured in `.env.local`, the application automatically activates **Simulation Mode**, logging the message status as `simulated` in `NotificationLog` without failing registrations.
-- **Webhook Endpoint**: `POST /api/webhooks/whatsapp` processes delivery, read, and failure statuses securely.
-
 ### 🛡️ Admin Dashboard & Live QR Scanner
 - **Secure Authentication**: Password hashing with `bcryptjs`, tamper-proof JWT session cookies via `jose`, and login brute-force rate limiting.
 - **Real-Time Overview Metrics**:
   - Total registrations
   - Checked-in vs Pending attendance counts
   - Shuhba-wise registration and check-in distribution
-  - WhatsApp notification delivery status breakdown
 - **Participant Management**:
   - Search by name, registration ID, place, or mobile number
   - Filter by department (Shuhba) and check-in status
@@ -125,13 +119,6 @@ AUTH_SECRET=saqafees_meet_super_secret_jwt_key_2026_at_least_32_chars_long
 ADMIN_DEFAULT_EMAIL=admin@saqafees.org
 ADMIN_DEFAULT_PASSWORD=Admin@Saqafees2026!
 ADMIN_DEFAULT_NAME="Saqafees Administrator"
-
-# WhatsApp Business Cloud API (Optional - runs in Simulation Mode if omitted)
-WHATSAPP_ENABLED=false
-WHATSAPP_PHONE_NUMBER_ID=
-WHATSAPP_ACCESS_TOKEN=
-WHATSAPP_BUSINESS_ACCOUNT_ID=
-WHATSAPP_VERIFY_TOKEN=saqafees_webhook_verify_token_2026
 ```
 
 ### Step 3: Run the Automated Tests
@@ -170,7 +157,7 @@ You can modify these default values in `.env.local` prior to first launch.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/registrations` | Register a new attendee (validates Zod, checks duplicate mobile, dispatches notification) |
+| `POST` | `/api/registrations` | Register a new attendee (validates Zod, checks duplicate mobile) |
 | `POST` | `/api/registrations/lookup` | Look up a registration ID and pass token by mobile number |
 | `GET` | `/api/registrations/[id]/qr` | Download high-resolution QR PNG |
 | `GET` | `/api/registrations/[id]/pass` | Download vector PDF registration pass |
@@ -179,13 +166,12 @@ You can modify these default values in `.env.local` prior to first launch.
 | `POST` | `/api/check-in` | Perform authorized atomic check-in (requires staff session) |
 | `POST` | `/api/admin/auth/login` | Staff / Admin authentication |
 | `POST` | `/api/admin/auth/logout` | Terminate session cookie |
-| `GET` | `/api/admin/stats` | Aggregated dashboard metrics, Shuhba breakdown, WhatsApp stats |
+| `GET` | `/api/admin/stats` | Aggregated dashboard metrics & Shuhba breakdown |
 | `GET` | `/api/admin/participants` | Paginated attendee list with search & filters |
 | `PATCH` | `/api/admin/participants/[id]` | Edit attendee details or toggle check-in |
 | `DELETE` | `/api/admin/participants/[id]` | Delete attendee (Admin role only) |
 | `GET` | `/api/admin/export` | Download CSV export of participants |
 | `GET/PATCH` | `/api/admin/settings` | Retrieve or update event settings & registration open status |
-| `GET/POST` | `/api/webhooks/whatsapp` | Meta WhatsApp Cloud API verification and delivery webhooks |
 
 ---
 

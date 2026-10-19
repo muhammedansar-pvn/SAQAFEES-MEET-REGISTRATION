@@ -22,7 +22,6 @@ export function AdminNav({ user }: AdminNavProps) {
   const navLinks = [
     { href: "/admin", label: "Overview", shortLabel: "Overview" },
     { href: "/admin/participants", label: "Participants", shortLabel: "Participants" },
-    { href: "/admin/whatsapp", label: "WhatsApp Broadcast", shortLabel: "Broadcast" },
     { href: "/admin/scanner", label: "QR Scanner", shortLabel: "Scanner" },
     { href: "/admin/settings", label: "Settings", shortLabel: "Settings" },
   ];

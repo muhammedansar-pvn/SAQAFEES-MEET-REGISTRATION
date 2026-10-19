@@ -16,7 +16,6 @@ interface ParticipantItem {
   checkInStatus: boolean;
   checkedInAt?: string;
   checkedInBy?: string;
-  whatsappStatus: string;
   passAccessToken: string;
   createdAt: string;
 }
@@ -100,29 +99,6 @@ export function ParticipantTable() {
   const [deletingParticipant, setDeletingParticipant] = useState<ParticipantItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  // WhatsApp Resend State
-  const [resendingId, setResendingId] = useState<string | null>(null);
-
-  const handleResendWhatsApp = async (p: ParticipantItem) => {
-    try {
-      setResendingId(p.registrationId);
-      const res = await fetch(`/api/admin/participants/${p.registrationId}/resend-whatsapp`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        showToast(data.error || "Failed to send WhatsApp message", "error");
-      } else {
-        showToast(`WhatsApp message ${data.status} for ${p.name}!`, "success");
-        fetchParticipants();
-      }
-    } catch {
-      showToast("Network error resending WhatsApp message", "error");
-    } finally {
-      setResendingId(null);
-    }
-  };
 
   const showToast = useCallback((message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
@@ -485,16 +461,16 @@ export function ParticipantTable() {
         </div>
 
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
-          {/* Prominent WhatsApp Report Button */}
+          {/* Registration Summary Report Button */}
           <button
             type="button"
             onClick={() => handleCopyWhatsAppReport(false)}
             disabled={isCopyingReport}
             className="h-9 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 shadow-xs text-center truncate"
-            title="Copy formatted WhatsApp registration summary"
+            title="Copy formatted registration summary to clipboard"
           >
             <span className="text-xs">📋</span>
-            <span className="truncate">{isCopyingReport ? "..." : "WA Report"}</span>
+            <span className="truncate">{isCopyingReport ? "..." : "Copy Summary"}</span>
           </button>
 
           {/* Optional Detailed WhatsApp Report */}
@@ -507,16 +483,6 @@ export function ParticipantTable() {
           >
             Detailed Report
           </button>
-
-          {/* Direct Link to WhatsApp Broadcast */}
-          <a
-            href="/admin/whatsapp"
-            className="h-9 px-3 rounded-lg bg-[#132238] hover:bg-[#1a2f4c] text-white font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-xs text-center truncate"
-            title="Launch WhatsApp bulk messaging queue"
-          >
-            <span className="text-xs">💬</span>
-            <span>Broadcast</span>
-          </a>
 
           <button
             type="button"
@@ -785,20 +751,19 @@ export function ParticipantTable() {
                 <th className="py-2.5 px-3">Shuhba</th>
                 <th className="py-2.5 px-3">Attendance & Food</th>
                 <th className="py-2.5 px-3">Check-in</th>
-                <th className="py-2.5 px-3">WhatsApp</th>
                 <th className="py-2.5 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-xs">
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-gray-400">
+                  <td colSpan={8} className="py-12 text-center text-gray-400">
                     Loading participants...
                   </td>
                 </tr>
               ) : participants.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-gray-400">
+                  <td colSpan={8} className="py-12 text-center text-gray-400">
                     <p className="font-medium text-gray-600">No participants match your criteria.</p>
                     {hasActiveFilters && (
                       <button
@@ -862,50 +827,7 @@ export function ParticipantTable() {
                         {p.checkInStatus ? "✓ Checked In" : "Pending"}
                       </button>
                     </td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
-                            p.whatsappStatus === "delivered"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : p.whatsappStatus === "sent"
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : p.whatsappStatus === "failed"
-                              ? "bg-red-50 text-red-700 border border-red-200"
-                              : p.whatsappStatus === "simulated"
-                              ? "bg-purple-50 text-purple-700 border border-purple-200"
-                              : "bg-gray-100 text-gray-500 border border-gray-200"
-                          }`}
-                        >
-                          {p.whatsappStatus === "delivered" && "✓ Delivered"}
-                          {p.whatsappStatus === "sent" && "✓ Sent"}
-                          {p.whatsappStatus === "failed" && "✕ Failed"}
-                          {p.whatsappStatus === "simulated" && "⚡ Mocked"}
-                          {(!p.whatsappStatus || p.whatsappStatus === "pending") && "⏳ Pending"}
-                        </span>
-                        {p.whatsappStatus === "failed" && (
-                          <button
-                            type="button"
-                            onClick={() => handleResendWhatsApp(p)}
-                            disabled={resendingId === p.registrationId}
-                            className="text-[10px] text-red-600 hover:text-red-800 underline cursor-pointer"
-                            title="Retry sending WhatsApp confirmation"
-                          >
-                            {resendingId === p.registrationId ? "..." : "Retry"}
-                          </button>
-                        )}
-                      </div>
-                    </td>
                     <td className="py-2.5 px-3 text-right space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => handleResendWhatsApp(p)}
-                        disabled={resendingId === p.registrationId}
-                        className="text-emerald-700 hover:underline cursor-pointer font-medium"
-                        title="Send or resend WhatsApp confirmation"
-                      >
-                        {resendingId === p.registrationId ? "..." : "WA"}
-                      </button>
                       <a
                         href={`/api/registrations/${p.registrationId}/pass?token=${p.passAccessToken}`}
                         download={`Pass-${p.registrationId}.pdf`}
@@ -986,7 +908,7 @@ export function ParticipantTable() {
             onClick={() => handleCopyWhatsAppReport(false)}
             className="h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors cursor-pointer text-center"
           >
-            Copy WhatsApp Report
+            Copy Summary Report
           </button>
           <a
             href="/api/admin/export"

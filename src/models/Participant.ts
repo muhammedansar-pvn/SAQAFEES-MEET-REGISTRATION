@@ -17,8 +17,8 @@ export interface IParticipant extends Document {
   checkedInAt?: Date;
   checkedInBy?: string;
   checkInNotes?: string;
-  whatsappConsent: boolean;
-  whatsappStatus: "pending" | "sent" | "delivered" | "failed" | "simulated";
+  whatsappConsent?: boolean;
+  whatsappStatus?: string;
   whatsappMessageId?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -104,13 +104,10 @@ const ParticipantSchema = new Schema<IParticipant>(
     },
     whatsappConsent: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     whatsappStatus: {
       type: String,
-      enum: ["pending", "sent", "delivered", "failed", "simulated"],
-      default: "pending",
-      index: true,
     },
     whatsappMessageId: {
       type: String,
