@@ -6,6 +6,8 @@ import {
   calculateDepartmentProgress,
   DepartmentProgressItem,
   OverallProgress,
+  formatDepartmentParticipantsText,
+  matchDepartmentTarget,
 } from "@/features/departments/progress";
 
 interface ParticipantItem {
@@ -327,8 +329,8 @@ export function ParticipantTable() {
     }
   };
 
-  // Copy Department List (TSV Format)
-  const handleCopyDepartmentList = async (shuhba: string) => {
+  // Copy Department List (WhatsApp Name & Place Format)
+  const handleCopyDepartmentList = async (shuhba: string, deptName?: string) => {
     setCopyingDept(shuhba);
     try {
       const res = await fetch(`/api/admin/participants?shuhba=${encodeURIComponent(shuhba)}&limit=2000`);
@@ -342,24 +344,18 @@ export function ParticipantTable() {
 
       const list: ParticipantItem[] = data.participants || [];
       if (list.length === 0) {
-        showToast(`No participants registered in department ${shuhba} yet.`, "info");
+        showToast(`No participants registered in department ${deptName || shuhba} yet.`, "info");
         setCopyingDept(null);
         return;
       }
 
-      // Tab-separated format (ideal for Excel, Google Sheets, WhatsApp)
-      const headerLine = "No.\tName\tPlace\tDistrict\tMobile\tDepartment\tParticipate Fully\tWants Food";
-      const rows = list.map((p, idx) => {
-        const fully = p.participateFully !== false ? "Yes" : "No";
-        const food = p.wantsFood !== false ? "Yes" : "No";
-        return `${idx + 1}\t${p.name}\t${p.place}\t${p.district || ""}\t${p.mobile}\t${p.shuhba}\t${fully}\t${food}`;
-      });
+      // Format as clean WhatsApp text: *DEPARTMENT*\n1. Name — Place
+      const headingName = deptName || matchDepartmentTarget(shuhba)?.name || shuhba;
+      const formattedText = formatDepartmentParticipantsText(headingName, list);
 
-      const tsvContent = `Department: ${shuhba}\nTotal: ${list.length}\n\n${headerLine}\n${rows.join("\n")}`;
-
-      const copied = await copyTextToClipboard(tsvContent);
+      const copied = await copyTextToClipboard(formattedText);
       if (copied) {
-        showToast(`Copied ${list.length} participants from ${shuhba} to clipboard!`);
+        showToast("Copied to clipboard");
       } else {
         showToast("Unable to write to clipboard. Check browser permissions.", "error");
       }
@@ -758,14 +754,14 @@ export function ParticipantTable() {
 
                   <button
                     type="button"
-                    onClick={() => handleCopyDepartmentList(dept.code)}
+                    onClick={() => handleCopyDepartmentList(dept.code, dept.name)}
                     disabled={isCopying}
                     className={`py-1 px-1.5 rounded text-[10px] font-medium text-center transition-colors cursor-pointer ${
                       isFilterActive
                         ? "bg-white/10 hover:bg-white/20 text-white"
                         : "border border-gray-200 hover:bg-gray-50 text-gray-600"
                     }`}
-                    title={`Copy list of registered participants in ${dept.code}`}
+                    title={`Copy list of registered participants in ${dept.name} (${dept.code})`}
                   >
                     {isCopying ? "..." : "Copy"}
                   </button>

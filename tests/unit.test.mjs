@@ -10,6 +10,7 @@ import {
   TOTAL_DEPARTMENT_TARGET,
   matchDepartmentTarget,
   calculateDepartmentProgress,
+  formatDepartmentParticipantsText,
 } from "../src/features/departments/progress.ts";
 
 describe("Phone Normalization and Validation", () => {
@@ -304,6 +305,100 @@ describe("Department-wise Registration Targets & Progress", () => {
     const updatedThqRank = updated.departments.findIndex((d) => d.code === "THAKHASSUS");
     const updatedNafsRank = updated.departments.findIndex((d) => d.code === "ILMUL NAFS");
     assert.ok(updatedNafsRank < updatedThqRank, "Nafs should now rank above Thq after status change");
+  });
+});
+
+describe("Department Copy Button WhatsApp Text Format", () => {
+  test("Copies only Name and Place in exact WhatsApp format (*HADEES* with em-dash)", () => {
+    const department = "Hadees";
+    const participants = [
+      {
+        name: "Muhammed Ansar",
+        place: "Tirur",
+        mobile: "9876543210",
+        registrationId: "LQM-2026-ABCD1234",
+        shuhba: "HADEES",
+        checkInStatus: true,
+      },
+      {
+        name: "Abdul Rahman",
+        place: "Paravanna",
+        mobile: "9876543211",
+        registrationId: "LQM-2026-ABCD1235",
+        shuhba: "HADEES",
+        checkInStatus: false,
+      },
+      {
+        name: "Ameen",
+        place: "Kozhikode",
+        mobile: "9876543212",
+        registrationId: "LQM-2026-ABCD1236",
+        shuhba: "HADEES",
+        checkInStatus: false,
+      },
+    ];
+
+    const result = formatDepartmentParticipantsText(department, participants);
+    const expected = [
+      "*HADEES*",
+      "1. Muhammed Ansar — Tirur",
+      "2. Abdul Rahman — Paravanna",
+      "3. Ameen — Kozhikode",
+    ].join("\n");
+
+    assert.equal(result, expected);
+
+    // Verify exclusions
+    assert.ok(!result.includes("9876543210"), "Should not include mobile number");
+    assert.ok(!result.includes("LQM-2026"), "Should not include registrationId");
+    assert.ok(!result.includes("checked"), "Should not include checkInStatus");
+    assert.ok(!result.includes("71"), "Should not include target numbers");
+  });
+
+  test("Correctly formats another department (Nafs) with sequential numbering starting from 1", () => {
+    const department = "Nafs";
+    const participants = [
+      { name: "Sayyid Zain", place: "Malappuram" },
+      { name: "Umar Farooq", place: "Kondotty" },
+    ];
+
+    const result = formatDepartmentParticipantsText(department, participants);
+    const expected = [
+      "*NAFS*",
+      "1. Sayyid Zain — Malappuram",
+      "2. Umar Farooq — Kondotty",
+    ].join("\n");
+
+    assert.equal(result, expected);
+  });
+
+  test("Gracefully trims spaces and handles missing place or name without undefined/null", () => {
+    const participants = [
+      { name: "  Ali Akbar  ", place: "  Kannur  " },
+      { name: "Hassan Kutty", place: "" }, // missing place
+      { name: "Usman", place: undefined },  // undefined place
+      { name: null, place: "Kochi" },       // missing name
+      { name: "", place: null },            // both missing
+    ];
+
+    const result = formatDepartmentParticipantsText("Shareea", participants);
+    const expected = [
+      "*SHAREEA*",
+      "1. Ali Akbar — Kannur",
+      "2. Hassan Kutty",
+      "3. Usman",
+      "4. Kochi",
+      "5. Participant",
+    ].join("\n");
+
+    assert.equal(result, expected);
+    assert.ok(!result.includes("undefined"));
+    assert.ok(!result.includes("null"));
+  });
+
+  test("Handles empty participant array gracefully", () => {
+    const result = formatDepartmentParticipantsText("Thq", []);
+    assert.equal(result, "*THQ*\n_(No registered participants yet)_");
   });
 });
 

@@ -241,3 +241,50 @@ export function calculateDepartmentProgress(input: InputDepartmentCounts): {
 
   return { departments, overall };
 }
+
+/**
+ * Formats a list of department participants into a clean WhatsApp-friendly text list.
+ *
+ * Example:
+ * *HADEES*
+ * 1. Muhammed Ansar — Tirur
+ * 2. Abdul Rahman — Paravanna
+ * 3. Ameen — Kozhikode
+ *
+ * Requirements:
+ * - Only participant name and place (No mobile number, ID, stats, or other fields).
+ * - Department name as heading wrapped in asterisks (*NAME*).
+ * - Sequential numbering starting at 1.
+ * - Em-dash separator: "Name — Place".
+ * - Trim whitespace and handle missing name or place gracefully without undefined/null.
+ */
+export function formatDepartmentParticipantsText(
+  departmentName: string,
+  participants: Array<{ name?: string | null; place?: string | null }>
+): string {
+  const cleanHeading = (departmentName || "").trim().toUpperCase();
+  const heading = `*${cleanHeading}*`;
+
+  if (!participants || participants.length === 0) {
+    return `${heading}\n_(No registered participants yet)_`;
+  }
+
+  const lines = participants.map((p, idx) => {
+    const num = idx + 1;
+    const name = (p?.name || "").trim();
+    const place = (p?.place || "").trim();
+
+    if (name && place) {
+      return `${num}. ${name} — ${place}`;
+    }
+    if (name) {
+      return `${num}. ${name}`;
+    }
+    if (place) {
+      return `${num}. ${place}`;
+    }
+    return `${num}. Participant`;
+  });
+
+  return `${heading}\n${lines.join("\n")}`;
+}
