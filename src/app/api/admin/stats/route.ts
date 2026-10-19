@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { Participant } from "@/models/Participant";
 import { getSession } from "@/lib/auth";
 import { EVENT_CONFIG } from "@/config/event.config";
+import { calculateDepartmentProgress } from "@/features/departments/progress";
 
 export async function GET() {
   try {
@@ -13,17 +14,29 @@ export async function GET() {
 
     await connectToDatabase();
 
+    // Exclude cancelled or invalid registrations according to registration status rules
+    const validFilter = {
+      $or: [
+        { status: { $exists: false } },
+        { status: { $nin: ["cancelled", "invalid", "rejected"] } },
+      ],
+    };
+
     // 1. Overall counts
-    const totalRegistrations = await Participant.countDocuments();
-    const checkedInCount = await Participant.countDocuments({ checkInStatus: true });
+    const totalRegistrations = await Participant.countDocuments(validFilter);
+    const checkedInCount = await Participant.countDocuments({
+      ...validFilter,
+      checkInStatus: true,
+    });
     const notCheckedInCount = totalRegistrations - checkedInCount;
     const checkInRate =
       totalRegistrations > 0
         ? Math.round((checkedInCount / totalRegistrations) * 100)
         : 0;
 
-    // 2. Shuhba-wise distribution
+    // 2. Shuhba-wise distribution aggregation
     const shuhbaAggregation = await Participant.aggregate([
+      { $match: validFilter },
       {
         $group: {
           _id: "$shuhba",
@@ -35,34 +48,44 @@ export async function GET() {
       },
     ]);
 
+    // 3. Calculate department targets, remaining, completion percentage, and sorted list
+    const { departments: departmentProgress, overall: overallProgress } =
+      calculateDepartmentProgress(shuhbaAggregation);
+
+    // Legacy map compatibility for existing consumers
     const shuhbaStats: Record<
       string,
-      { total: number; checkedIn: number; percentage: number }
-    > = {};
-    EVENT_CONFIG.shuhbaOptions.forEach((shuhba) => {
-      shuhbaStats[shuhba] = { total: 0, checkedIn: 0, percentage: 0 };
-    });
-
-    shuhbaAggregation.forEach((item) => {
-      if (item._id && shuhbaStats[item._id]) {
-        const total = item.count;
-        const percentage =
-          totalRegistrations > 0 ? Math.round((total / totalRegistrations) * 100) : 0;
-        shuhbaStats[item._id] = {
-          total,
-          checkedIn: item.checkedIn,
-          percentage,
-        };
+      {
+        total: number;
+        checkedIn: number;
+        percentage: number;
+        target: number;
+        remaining: number;
+        completionPercentage: number;
+        visualPercentage: number;
       }
+    > = {};
+
+    EVENT_CONFIG.shuhbaOptions.forEach((shuhba) => {
+      const match = departmentProgress.find((d) => d.code === shuhba);
+      shuhbaStats[shuhba] = {
+        total: match?.registeredCount ?? 0,
+        checkedIn: match?.checkedInCount ?? 0,
+        percentage: match?.completionPercentage ?? 0,
+        target: match?.target ?? 0,
+        remaining: match?.remaining ?? 0,
+        completionPercentage: match?.completionPercentage ?? 0,
+        visualPercentage: match?.visualPercentage ?? 0,
+      };
     });
 
-    // 3. Recent activity
-    const recentRegistrations = await Participant.find()
+    // 4. Recent activity
+    const recentRegistrations = await Participant.find(validFilter)
       .sort({ createdAt: -1 })
       .limit(5)
       .select("registrationId name place shuhba createdAt checkInStatus");
 
-    const recentCheckIns = await Participant.find({ checkInStatus: true })
+    const recentCheckIns = await Participant.find({ ...validFilter, checkInStatus: true })
       .sort({ checkedInAt: -1 })
       .limit(5)
       .select("registrationId name shuhba checkedInAt checkedInBy");
@@ -75,6 +98,8 @@ export async function GET() {
         checkInRate,
       },
       shuhbaStats,
+      departmentProgress,
+      overallProgress,
       recentRegistrations,
       recentCheckIns,
     });

@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { EVENT_CONFIG } from "@/config/event.config";
+import {
+  calculateDepartmentProgress,
+  DepartmentProgressItem,
+  OverallProgress,
+} from "@/features/departments/progress";
 
 interface ParticipantItem {
   _id: string;
@@ -24,6 +29,10 @@ interface DepartmentStat {
   total: number;
   checkedIn: number;
   percentage: number;
+  target?: number;
+  remaining?: number;
+  completionPercentage?: number;
+  visualPercentage?: number;
 }
 
 interface ToastState {
@@ -71,7 +80,13 @@ export function ParticipantTable() {
   const [totalCount, setTotalCount] = useState(0); // Filtered count
   const [overallTotal, setOverallTotal] = useState(0); // Absolute total in DB
 
-  // Department Stats State
+  // Department Stats & Progress State
+  const [departmentProgress, setDepartmentProgress] = useState<DepartmentProgressItem[]>(() => {
+    return calculateDepartmentProgress({}).departments;
+  });
+  const [overallProgress, setOverallProgress] = useState<OverallProgress | null>(() => {
+    return calculateDepartmentProgress({}).overall;
+  });
   const [departmentStats, setDepartmentStats] = useState<Record<string, DepartmentStat>>({});
   const [isStatsLoading, setIsStatsLoading] = useState(false);
   const [copyingDept, setCopyingDept] = useState<string | null>(null);
@@ -107,16 +122,29 @@ export function ParticipantTable() {
     }, 3500);
   }, []);
 
-  // Fetch Department Stats
+  // Fetch Department Stats & Progress
   const fetchStats = useCallback(async () => {
     setIsStatsLoading(true);
     try {
       const res = await fetch("/api/admin/stats");
       const data = await res.json();
       if (res.ok) {
+        if (data.departmentProgress && Array.isArray(data.departmentProgress)) {
+          setDepartmentProgress(data.departmentProgress);
+        } else if (data.shuhbaStats) {
+          const computed = calculateDepartmentProgress(data.shuhbaStats);
+          setDepartmentProgress(computed.departments);
+          setOverallProgress(computed.overall);
+        }
+
+        if (data.overallProgress) {
+          setOverallProgress(data.overallProgress);
+        }
+
         if (data.shuhbaStats) {
           setDepartmentStats(data.shuhbaStats);
         }
+
         if (data.summary?.totalRegistrations !== undefined) {
           setOverallTotal(data.summary.totalRegistrations);
         }
@@ -351,8 +379,16 @@ export function ParticipantTable() {
       const statsRes = await fetch("/api/admin/stats");
       const statsData = await statsRes.json();
 
-      const latestStats: Record<string, DepartmentStat> = statsData.shuhbaStats || {};
-      const latestTotal: number = statsData.summary?.totalRegistrations ?? overallTotal;
+      const latestProgress: DepartmentProgressItem[] =
+        statsData.departmentProgress && Array.isArray(statsData.departmentProgress)
+          ? statsData.departmentProgress
+          : calculateDepartmentProgress(statsData.shuhbaStats || {}).departments;
+
+      const latestOverall: OverallProgress =
+        statsData.overallProgress || calculateDepartmentProgress(statsData.shuhbaStats || {}).overall;
+
+      const latestTotal: number =
+        statsData.summary?.totalRegistrations ?? latestOverall.totalRegistered ?? overallTotal;
 
       const formattedDate = new Date().toLocaleDateString("en-GB", {
         day: "numeric",
@@ -361,25 +397,25 @@ export function ParticipantTable() {
       });
 
       let sumOfDepartments = 0;
-      const breakdownLines = EVENT_CONFIG.shuhbaOptions.map((shuhba, idx) => {
-        const count = latestStats[shuhba]?.total ?? 0;
-        sumOfDepartments += count;
-        return `${idx + 1}. ${shuhba} — ${count}`;
+      const breakdownLines = latestProgress.map((dept, idx) => {
+        sumOfDepartments += dept.registeredCount;
+        return `${idx + 1}. ${dept.name} (${dept.code}) — ${dept.registeredCount}/${dept.target} (${dept.completionPercentage}%) · ${dept.remaining} remaining`;
       });
 
       let reportText = "";
 
       if (!detailed) {
         reportText = [
-          `*📊 SAQAFEES MEET — REGISTRATION UPDATE*`,
+          `*📊 SAQAFEES MEET — REGISTRATION PROGRESS UPDATE*`,
           ``,
-          `📌 *Total Registrations: ${latestTotal}*`,
+          `📌 *Total Registrations: ${latestTotal} / ${latestOverall.totalTarget} (${latestOverall.completionPercentage}%)*`,
+          `⏳ *Overall Remaining: ${latestOverall.totalRemaining}*`,
           ``,
-          `*Department-wise Breakdown*`,
+          `*Department-wise Progress (Ranked by %)*`,
           ``,
           breakdownLines.join("\n"),
           ``,
-          `*Total: ${sumOfDepartments}*`,
+          `*Total Registered: ${sumOfDepartments}*`,
           ``,
           `_Updated: ${formattedDate}_`,
         ].join("\n");
@@ -499,96 +535,250 @@ export function ParticipantTable() {
         </div>
       </div>
 
-      {/* 3. Department-wise Registration Statistics Section */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
+      {/* 3. Department-wise Registration Progress Section */}
+      <div className="space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">
-              Department-wise Registrations
+              Department Registration Progress
             </h3>
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded font-medium">
+              Ranked by Completion %
+            </span>
             {isStatsLoading && <span className="text-[10px] text-gray-400">Updating...</span>}
           </div>
-          <span className="text-[11px] text-gray-500">
-            Total Across Departments: <strong className="text-[#132238]">{overallTotal}</strong>
-          </span>
+          {overallProgress && (
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-gray-500">
+                Target: <strong className="text-[#132238]">{overallProgress.totalTarget}</strong>
+              </span>
+              <span className="text-gray-300">·</span>
+              <span className="text-gray-500">
+                Registered: <strong className="text-[#132238]">{overallProgress.totalRegistered}</strong>
+              </span>
+              <span className="text-gray-300">·</span>
+              <span className="text-gray-500">
+                Remaining: <strong className="text-amber-700">{overallProgress.totalRemaining}</strong>
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
-          {EVENT_CONFIG.shuhbaOptions.map((shuhba) => {
-            const stat = departmentStats[shuhba] || { total: 0, checkedIn: 0, percentage: 0 };
-            const isFilterActive = shuhbaFilter === shuhba;
-            const isCopying = copyingDept === shuhba;
+        {/* Overall Progress Banner */}
+        {overallProgress && (
+          <div className="bg-[#132238] text-white rounded-xl p-3.5 shadow-xs border border-[#1e3456]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm tracking-tight text-[#C5A059]">
+                  Total Event Progress: {overallProgress.totalRegistered} / {overallProgress.totalTarget}
+                </span>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/15 font-semibold text-white">
+                  {overallProgress.completionPercentage}%
+                </span>
+              </div>
+              <div className="text-[11px] text-gray-300">
+                {overallProgress.totalRemaining > 0 ? (
+                  <span>
+                    <strong className="text-amber-300 font-semibold">{overallProgress.totalRemaining}</strong> registrations remaining across all departments
+                  </span>
+                ) : (
+                  <span className="text-emerald-400 font-semibold">🎉 Overall Registration Target Achieved!</span>
+                )}
+              </div>
+            </div>
+            {/* Visual Progress Bar capped at 100% */}
+            <div className="w-full bg-white/20 rounded-full h-2 mt-2.5 overflow-hidden">
+              <div
+                className="bg-[#C5A059] h-full rounded-full transition-all duration-500"
+                style={{ width: `${overallProgress.visualPercentage}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Department Cards Grid (Sorted descending by completion percentage) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3">
+          {departmentProgress.map((dept, index) => {
+            const isFilterActive = shuhbaFilter === dept.code;
+            const isCopying = copyingDept === dept.code;
 
             return (
               <div
-                key={shuhba}
-                className={`relative rounded-xl border p-3 flex flex-col justify-between transition-all ${
+                key={dept.code}
+                className={`relative rounded-xl border p-3.5 flex flex-col justify-between transition-all ${
                   isFilterActive
-                    ? "bg-[#132238] text-white border-[#132238] shadow-sm"
+                    ? "bg-[#132238] text-white border-[#132238] shadow-sm ring-2 ring-[#C5A059]"
                     : "bg-white border-gray-200 hover:border-gray-300 text-[#132238]"
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`text-[10px] font-bold tracking-tight uppercase truncate ${
-                        isFilterActive ? "text-amber-300" : "text-gray-700"
-                      }`}
-                      title={shuhba}
-                    >
-                      {shuhba}
-                    </span>
-                    <span
-                      className={`text-[9px] font-mono px-1 py-0.2 rounded ${
-                        isFilterActive
-                          ? "bg-white/20 text-white"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {stat.percentage}%
-                    </span>
+                  {/* Card Header: Rank, Department Name & Completion % */}
+                  <div className="flex items-start justify-between gap-1.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                            isFilterActive
+                              ? "bg-[#C5A059] text-[#132238]"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          #{index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShuhbaFilter(isFilterActive ? "ALL" : dept.code);
+                            setPage(1);
+                          }}
+                          className={`text-xs font-bold truncate uppercase cursor-pointer hover:underline text-left ${
+                            isFilterActive ? "text-white" : "text-[#132238]"
+                          }`}
+                          title={`Filter by ${dept.code} (${dept.name})`}
+                        >
+                          {dept.name}
+                        </button>
+                      </div>
+                      <p
+                        className={`text-[10px] mt-0.5 truncate ${
+                          isFilterActive ? "text-gray-300" : "text-gray-400"
+                        }`}
+                        title={dept.code}
+                      >
+                        {dept.code}
+                      </p>
+                    </div>
+
+                    {/* Completion Percentage Badge */}
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`text-xs font-mono font-extrabold px-1.5 py-0.5 rounded ${
+                          isFilterActive
+                            ? "bg-white/20 text-amber-300"
+                            : dept.completionPercentage >= 100
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : dept.completionPercentage >= 50
+                            ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {dept.completionPercentage}%
+                      </span>
+                    </div>
                   </div>
 
-                  <p
-                    className={`text-xl font-extrabold mt-1.5 ${
-                      isFilterActive ? "text-white" : "text-[#132238]"
+                  {/* Registered count / Target */}
+                  <div className="mt-2.5 flex items-baseline justify-between">
+                    <div>
+                      <span
+                        className={`text-lg font-extrabold ${
+                          isFilterActive ? "text-white" : "text-[#132238]"
+                        }`}
+                      >
+                        {dept.registeredCount}
+                      </span>
+                      <span
+                        className={`text-xs font-medium ml-1 ${
+                          isFilterActive ? "text-gray-300" : "text-gray-500"
+                        }`}
+                      >
+                        / {dept.target}
+                      </span>
+                    </div>
+
+                    {/* Remaining */}
+                    <div className="text-right">
+                      {dept.remaining > 0 ? (
+                        <span
+                          className={`text-[11px] font-medium ${
+                            isFilterActive ? "text-amber-300" : "text-gray-600"
+                          }`}
+                        >
+                          {dept.remaining} remaining
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-400">
+                          Target met!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Visual Progress Bar (Capped at 100%) */}
+                  <div
+                    className={`w-full rounded-full h-2 mt-2 overflow-hidden ${
+                      isFilterActive ? "bg-white/20" : "bg-gray-100"
                     }`}
                   >
-                    {stat.total}
-                  </p>
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isFilterActive
+                          ? "bg-[#C5A059]"
+                          : dept.completionPercentage >= 100
+                          ? "bg-emerald-500"
+                          : dept.completionPercentage >= 50
+                          ? "bg-blue-600"
+                          : "bg-[#132238]"
+                      }`}
+                      style={{ width: `${dept.visualPercentage}%` }}
+                    />
+                  </div>
+
+                  {/* Check-in status subtext */}
                   <p
-                    className={`text-[10px] mt-0.5 ${
+                    className={`text-[10px] mt-1.5 ${
                       isFilterActive ? "text-gray-300" : "text-gray-400"
                     }`}
                   >
-                    {stat.checkedIn} checked in
+                    {dept.checkedInCount} checked in
                   </p>
                 </div>
 
-                <div className="mt-3 pt-2 border-t border-gray-100/30 flex items-center gap-1.5">
+                {/* Quick actions (Filter toggle / Copy / CSV) */}
+                <div
+                  className={`mt-3 pt-2 border-t flex items-center gap-1.5 ${
+                    isFilterActive ? "border-white/15" : "border-gray-100"
+                  }`}
+                >
                   <button
                     type="button"
-                    onClick={() => handleCopyDepartmentList(shuhba)}
-                    disabled={isCopying}
+                    onClick={() => {
+                      setShuhbaFilter(isFilterActive ? "ALL" : dept.code);
+                      setPage(1);
+                    }}
                     className={`flex-1 py-1 px-1 rounded text-[10px] font-medium text-center transition-colors cursor-pointer ${
                       isFilterActive
                         ? "bg-white/20 hover:bg-white/30 text-white"
                         : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                     }`}
-                    title={`Copy list of registered participants in ${shuhba}`}
+                    title={isFilterActive ? "Clear filter" : `Filter participants by ${dept.code}`}
+                  >
+                    {isFilterActive ? "Filtered ✓" : "Filter"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCopyDepartmentList(dept.code)}
+                    disabled={isCopying}
+                    className={`py-1 px-1.5 rounded text-[10px] font-medium text-center transition-colors cursor-pointer ${
+                      isFilterActive
+                        ? "bg-white/10 hover:bg-white/20 text-white"
+                        : "border border-gray-200 hover:bg-gray-50 text-gray-600"
+                    }`}
+                    title={`Copy list of registered participants in ${dept.code}`}
                   >
                     {isCopying ? "..." : "Copy"}
                   </button>
 
                   <a
-                    href={`/api/admin/export?shuhba=${encodeURIComponent(shuhba)}`}
-                    download={`saqafees-${shuhba.toLowerCase()}.csv`}
+                    href={`/api/admin/export?shuhba=${encodeURIComponent(dept.code)}`}
+                    download={`saqafees-${dept.code.toLowerCase()}.csv`}
                     className={`py-1 px-1.5 rounded text-[10px] font-medium text-center transition-colors ${
                       isFilterActive
                         ? "bg-white/10 hover:bg-white/20 text-white"
                         : "border border-gray-200 hover:bg-gray-50 text-gray-500"
                     }`}
-                    title={`Download CSV for ${shuhba}`}
+                    title={`Download CSV for ${dept.code}`}
                   >
                     CSV
                   </a>
@@ -655,9 +845,9 @@ export function ParticipantTable() {
               className="w-full h-9 px-2.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none cursor-pointer"
             >
               <option value="ALL">All Departments</option>
-              {EVENT_CONFIG.shuhbaOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt} ({departmentStats[opt]?.total ?? 0})
+              {departmentProgress.map((dept) => (
+                <option key={dept.code} value={dept.code}>
+                  {dept.name} ({dept.registeredCount}/{dept.target} · {dept.completionPercentage}%)
                 </option>
               ))}
             </select>

@@ -5,6 +5,12 @@ import { generateRegistrationId, generateSecureVerificationToken, hashVerificati
 import { registrationSchema } from "../src/lib/validations/registration.ts";
 import { generateIcsContent, generateGoogleCalendarUrl } from "../src/features/calendar/generator.ts";
 import { EVENT_CONFIG } from "../src/config/event.config.ts";
+import {
+  DEPARTMENT_TARGETS,
+  TOTAL_DEPARTMENT_TARGET,
+  matchDepartmentTarget,
+  calculateDepartmentProgress,
+} from "../src/features/departments/progress.ts";
 
 describe("Phone Normalization and Validation", () => {
   test("Normalizes standard 10-digit Indian numbers", () => {
@@ -129,6 +135,178 @@ describe("Calendar & Reminders", () => {
     assert.ok(ics.includes("END:VCALENDAR"));
   });
 });
+
+describe("Department-wise Registration Targets & Progress", () => {
+  test("Exact department targets match specification and sum to 474", () => {
+    assert.equal(TOTAL_DEPARTMENT_TARGET, 474);
+
+    const targetMap = Object.fromEntries(
+      DEPARTMENT_TARGETS.map((d) => [d.name, d.target])
+    );
+
+    assert.equal(targetMap["Nafs"], 94);
+    assert.equal(targetMap["Shareea"], 86);
+    assert.equal(targetMap["Idara"], 85);
+    assert.equal(targetMap["Hadees"], 71);
+    assert.equal(targetMap["Thafseer"], 67);
+    assert.equal(targetMap["Wiras"], 49);
+    assert.equal(targetMap["Thq"], 18);
+    assert.equal(targetMap["Luga"], 4);
+
+    const sum = DEPARTMENT_TARGETS.reduce((acc, d) => acc + d.target, 0);
+    assert.equal(sum, 474);
+  });
+
+  test("Department alias mapping resolves canonical departments without creating duplicates", () => {
+    assert.equal(matchDepartmentTarget("Nafs")?.code, "ILMUL NAFS");
+    assert.equal(matchDepartmentTarget("ILMUL NAFS")?.code, "ILMUL NAFS");
+    assert.equal(matchDepartmentTarget("ILUMU NAFS")?.code, "ILMUL NAFS");
+    assert.equal(matchDepartmentTarget("nafs")?.code, "ILMUL NAFS");
+
+    assert.equal(matchDepartmentTarget("Thq")?.code, "THAKHASSUS");
+    assert.equal(matchDepartmentTarget("THQ")?.code, "THAKHASSUS");
+    assert.equal(matchDepartmentTarget("THAKHASSUS")?.code, "THAKHASSUS");
+
+    assert.equal(matchDepartmentTarget("Idara")?.code, "ILMUL IDARA");
+    assert.equal(matchDepartmentTarget("ILMUL IDARA")?.code, "ILMUL IDARA");
+    assert.equal(matchDepartmentTarget("IMUL IDARA")?.code, "ILMUL IDARA");
+
+    assert.equal(matchDepartmentTarget("Luga")?.code, "LUGA ARABIC");
+    assert.equal(matchDepartmentTarget("LUGA ARABIC")?.code, "LUGA ARABIC");
+    assert.equal(matchDepartmentTarget("LUGHA")?.code, "LUGA ARABIC");
+
+    assert.equal(matchDepartmentTarget("Shareea")?.code, "SHAREEA");
+    assert.equal(matchDepartmentTarget("SHAREEA")?.code, "SHAREEA");
+    assert.equal(matchDepartmentTarget("SHARIA")?.code, "SHAREEA");
+
+    assert.equal(matchDepartmentTarget("Hadees")?.code, "HADEES");
+    assert.equal(matchDepartmentTarget("HADEES")?.code, "HADEES");
+
+    assert.equal(matchDepartmentTarget("Thafseer")?.code, "THAFSEER");
+    assert.equal(matchDepartmentTarget("THAFSEER")?.code, "THAFSEER");
+
+    assert.equal(matchDepartmentTarget("Wiras")?.code, "WIRAS");
+    assert.equal(matchDepartmentTarget("WIRAS")?.code, "WIRAS");
+  });
+
+  test("Percentage calculations follow (Registered Count / Department Target) * 100", () => {
+    // 47 registered for Nafs (target: 94) -> exactly 50%
+    const { departments } = calculateDepartmentProgress({
+      "ILMUL NAFS": { count: 47, checkedIn: 10 },
+    });
+
+    const nafs = departments.find((d) => d.code === "ILMUL NAFS");
+    assert.ok(nafs);
+    assert.equal(nafs.registeredCount, 47);
+    assert.equal(nafs.checkedInCount, 10);
+    assert.equal(nafs.target, 94);
+    assert.equal(nafs.remaining, 47);
+    assert.equal(nafs.completionPercentage, 50.0);
+    assert.equal(nafs.visualPercentage, 50.0);
+    assert.equal(nafs.isExceeded, false);
+  });
+
+  test("Visual progress bar is capped at 100% while actual percentage is preserved when exceeded", () => {
+    // Luga has target 4. Suppose 6 participants registered.
+    const { departments } = calculateDepartmentProgress({
+      "LUGA ARABIC": { count: 6 },
+    });
+
+    const luga = departments.find((d) => d.code === "LUGA ARABIC");
+    assert.ok(luga);
+    assert.equal(luga.registeredCount, 6);
+    assert.equal(luga.target, 4);
+    assert.equal(luga.remaining, 0); // No registrations remaining
+    assert.equal(luga.completionPercentage, 150.0); // True completion percentage
+    assert.equal(luga.visualPercentage, 100.0); // Visual progress bar capped at 100%
+    assert.equal(luga.isExceeded, true);
+  });
+
+  test("Missing departments are always included with 0 registered, target remaining, and 0% completion", () => {
+    // Input only contains 1 department
+    const { departments, overall } = calculateDepartmentProgress([
+      { _id: "HADEES", count: 71, checkedIn: 35 },
+    ]);
+
+    // All 8 official departments must be returned
+    assert.equal(departments.length, 8);
+
+    const hadees = departments.find((d) => d.code === "HADEES");
+    assert.ok(hadees);
+    assert.equal(hadees.registeredCount, 71);
+    assert.equal(hadees.remaining, 0);
+    assert.equal(hadees.completionPercentage, 100.0);
+
+    // Other missing departments must be included with count 0
+    const nafs = departments.find((d) => d.code === "ILMUL NAFS");
+    assert.ok(nafs);
+    assert.equal(nafs.registeredCount, 0);
+    assert.equal(nafs.remaining, 94);
+    assert.equal(nafs.completionPercentage, 0);
+    assert.equal(nafs.visualPercentage, 0);
+
+    assert.equal(overall.totalTarget, 474);
+    assert.equal(overall.totalRegistered, 71);
+    assert.equal(overall.totalRemaining, 474 - 71);
+  });
+
+  test("Departments are sorted strictly in descending order by completion percentage", () => {
+    const input = [
+      { _id: "LUGA ARABIC", count: 4 },   // 4 / 4 = 100%
+      { _id: "THAKHASSUS", count: 9 },    // 9 / 18 = 50%
+      { _id: "HADEES", count: 71 },       // 71 / 71 = 100%
+      { _id: "ILMUL NAFS", count: 23 },   // 23 / 94 = 24.5%
+      { _id: "SHAREEA", count: 86 },      // 86 / 86 = 100%
+    ];
+
+    const { departments } = calculateDepartmentProgress(input);
+
+    assert.equal(departments.length, 8);
+
+    // First departments must have 100% completion
+    assert.equal(departments[0].completionPercentage, 100.0);
+    assert.equal(departments[1].completionPercentage, 100.0);
+    assert.equal(departments[2].completionPercentage, 100.0);
+
+    // Verify each department has >= percentage than the next
+    for (let i = 0; i < departments.length - 1; i++) {
+      assert.ok(
+        departments[i].rawPercentage >= departments[i + 1].rawPercentage,
+        `Index ${i} (${departments[i].name}: ${departments[i].completionPercentage}%) should be >= index ${i + 1} (${departments[i + 1].name}: ${departments[i + 1].completionPercentage}%)`
+      );
+    }
+  });
+
+  test("Status changes update counts, percentages, remaining, and adjust rank immediately", () => {
+    // Initial state: Thq is 50%, Nafs is 10%
+    const initialInput = {
+      "THAKHASSUS": { count: 9 },  // 9/18 = 50%
+      "ILMUL NAFS": { count: 9 },  // 9/94 = 9.6%
+    };
+
+    const initial = calculateDepartmentProgress(initialInput);
+    const initialThqRank = initial.departments.findIndex((d) => d.code === "THAKHASSUS");
+    const initialNafsRank = initial.departments.findIndex((d) => d.code === "ILMUL NAFS");
+    assert.ok(initialThqRank < initialNafsRank, "Thq should be ranked higher initially");
+
+    // Status change: Nafs registrations surge to 94 (100%)
+    const updatedInput = {
+      "THAKHASSUS": { count: 9 },  // 50%
+      "ILMUL NAFS": { count: 94 }, // 100%
+    };
+
+    const updated = calculateDepartmentProgress(updatedInput);
+    const updatedNafs = updated.departments.find((d) => d.code === "ILMUL NAFS");
+    assert.ok(updatedNafs);
+    assert.equal(updatedNafs.completionPercentage, 100.0);
+    assert.equal(updatedNafs.remaining, 0);
+
+    const updatedThqRank = updated.departments.findIndex((d) => d.code === "THAKHASSUS");
+    const updatedNafsRank = updated.departments.findIndex((d) => d.code === "ILMUL NAFS");
+    assert.ok(updatedNafsRank < updatedThqRank, "Nafs should now rank above Thq after status change");
+  });
+});
+
 
 
 
